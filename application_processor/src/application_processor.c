@@ -60,6 +60,20 @@
 #define SUCCESS_RETURN 0
 #define ERROR_RETURN -1
 
+
+/**************** seccurity******************************/
+// global
+uint16_t keys[COMPONENT_CNT];
+
+// Hash PIN 
+uint8_t hash_outpin[HASH_SIZE];
+hash((uint8_t*) AP_PIN, sizeof(AP_PIN, hash_outpin));
+
+// Hash token 
+uint8_t hash_token[HASH_SIZE];
+hash((uint8_t*)AP_TOKEN, sizeof(AP_TOKEN), hash_token);
+
+
 /******************************** TYPE DEFINITIONS ********************************/
 // Data structure for sending commands to component
 // Params allows for up to MAX_I2C_MESSAGE_LEN - 1 bytes to be send
@@ -386,7 +400,15 @@ void boot() {
 int validate_pin() {
     char buf[50];
     recv_input("Enter pin: ", buf);
-    if (!strcmp(buf, AP_PIN)) {
+    char* pinEntered = buf;
+ 
+    // Hash example encryption results 
+    uint8_t comphash_outpin[HASH_SIZE];
+    hash((uint8_t*) pinEntered,sizeof(pinEntered), comphash_outpin);
+
+
+    //if (!strcmp(buf, AP_PIN)) {
+    if (comphash_outpin* == hash_outpin*) {
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -398,7 +420,15 @@ int validate_pin() {
 int validate_token() {
     char buf[50];
     recv_input("Enter token: ", buf);
-    if (!strcmp(buf, AP_TOKEN)) {
+     
+
+    char* tokenEntered = buf; 
+    // Hash entered pin and compare 
+    uint8_t comphash_token[HASH_SIZE];
+    hash((uint8_t*)tokenEntered ,sizeof(tokenEntered), comphash_token);
+
+    //if (!strcmp(buf, AP_TOKEN))
+    if (comphash_token* == hash_token*) {
         print_debug("Token Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -417,14 +447,7 @@ void attempt_boot() {
         print_error("Failed to boot all components\n");
         return;
     }
-    // Reference design flag
-    // Remove this in your design
-    char flag[37];
-    for (int i = 0; aseiFuengleR[i]; i++) {
-        flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
-        flag[i+1] = 0;
-    }
-    print_debug("%s\n", flag);
+  
     // Print boot message
     // This always needs to be printed when booting
     print_info("AP>%s\n", AP_BOOT_MSG);
@@ -443,7 +466,7 @@ void attempt_replace() {
 
     uint32_t component_id_in = 0;
     uint32_t component_id_out = 0;
-
+    
     recv_input("Component ID In: ", buf);
     sscanf(buf, "%x", &component_id_in);
     recv_input("Component ID Out: ", buf);
