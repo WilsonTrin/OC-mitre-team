@@ -1,4 +1,4 @@
-
+# echo "#define SECRET 1234" > global_secrets.h
 # function to check required arguments
 check_defined = \
 	$(strip $(foreach 1,$1, \
@@ -8,7 +8,51 @@ __check_defined = \
 		$(error Undefined $1))
 
 all:
-	echo "#define SECRET 1234" > global_secrets.h
+	echo "#define APPRIVATE "-----BEGIN RSA PRIVATE KEY-----
+MIICXAIBAAKBgQCrNIqilA4SU6XZfWNo5fZvkJD8aVj7e/eDz+T3RlxX7JwxJcV4
+r8fm1Vs9Z9GR5sQE9jm3YzVZYBxZaOYWsnK/rPt6MhpQGxxMaabWBBGsVrofFOug
+PcAHbYGB0RcArihDE+FVczEF8kPPOknhWNPQVV1G4DhS4WrOQHyeaBHAVwIDAQAB
+AoGAWye4gOOvslZTQb+fRGTcl34zlBFLTWst2ELCuF4AINhcOVbRE3cUSnVjBQjX
+7oUd7T5kcJ4j85hWv8w4ZfFRYpeJjXYK+TbHwANlAlV0b66Y7sV5XxF0+7hlXz6p
+tdzwBzKdshPMYvCyQyJSI0J961ktU66eYqlXuuwhX1UJ9JECQQDytAeX8T4xpZML
+WJrU9k/0kHi6iMcrEquu6OTZdQhf/KIMjn67eRGgKKs3NDbiGZtF1M9seYBBKhbj
++RlljaP9AkEAtJW8SwLSqI7XODT7HkVzC7Cs7HCx/h6y4J1mMVWqm2Uws7XRWd3Z
+boxUWvd1DKXE2R7fknwf4aIC02Cs1FDj4wJAfnL/tdEx5ynt965dVPFT7QbMb9tN
+cYqTuliKyyVnjKMSRtqC+uf0H+6wbd2dbqWKuZJL06dmBA2KyZICAmAOfQJAbCm7
+rFo2f0t/UWU6fDkw3XGnQb+GfSU6Extz2FztYUJM13cxu9gLohFffVT2wOqRa1L4
+qq66EdWOR7mCC3Gf7QJBAItUuSptwFVLO3iaJOxGiM5v96Y5eFqbDosvLBeKGZj3
+v/yM3JnIU/dBgwdNTm3afgNe8EFsO3q9H+EDxyJpCsg=
+-----END RSA PRIVATE KEY-----"" > ap_secrets.h
+	echo "#define COMPUBLIC "-----BEGIN PUBLIC KEY-----
+MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgFk97282KRM8z9TeLbEou24YnXZS
+U1F3iSQyO2xDIFh1VE87Y6tvvC6knMPK2lKCGKMiymQ9nsSNX89i7ZEc5TmX8HGz
+PVJzPNKLOT+hgPDoetPIMvTNpUrcdN13hJbvfqIdF3awFH3lR+dWYXPIoCdx9lxX
+Mx9tzB+7X2ZYql7bAgMBAAE=
+-----END PUBLIC KEY-----"" > ap_secrets.h
+
+	echo "#define COMPRIVATE "-----BEGIN RSA PRIVATE KEY-----
+MIICWwIBAAKBgFk97282KRM8z9TeLbEou24YnXZSU1F3iSQyO2xDIFh1VE87Y6tv
+vC6knMPK2lKCGKMiymQ9nsSNX89i7ZEc5TmX8HGzPVJzPNKLOT+hgPDoetPIMvTN
+pUrcdN13hJbvfqIdF3awFH3lR+dWYXPIoCdx9lxXMx9tzB+7X2ZYql7bAgMBAAEC
+gYBLmmXa4JZhvtYPb35kJK7M8buMfugpD0y2xnuDF0cyyYt4aEbi+RECruBEGvlk
+huSaaCHwVCfKOj7d8eBzXHhwl0LOPX3Zqk28e3ZD1XpiXFfNE8jLijqOxx/9dX+X
+Zji2f2VYo1EZeRgQATWdrqc7tfQcljX6XnZlzCkXNpyAGQJBAJjYNoZPk+zCxSE1
+KU0g4Mmz/8ovz/bEGEuaBCejarwbsEAv040loVU1t+MRw8LnU8IzJ7Jj5S8AKnow
+1OkP5+8CQQCVeL+GRLkR5yfe0KWi9Q8uTPvlh3cQm3ejWtDzRSMB7No+29xmf0/T
+CWyblGm/MvsfWdhF1QxiMgcRhRbd2uvVAkEAmGy+63C+15VhW/2VI6rPIbfVNoA6
+CCCFDhgZXqJU1iVSvqAzfAZz/vMkYFmd/WgOmpPDWd7PdvDWa6b5HTfUlwJAFx/O
+KZyaMS3c2jjXV0WoapZYZiM2BWi38prLNsecaeDVxuHG0Eij9ddAaTVlwsHFXg1N
+S0hxmQN6WniHmB0VXQJAHvvV9R+1xUeQygORHGlHl+4iFfTvVddnvjveEAo3a5Wx
+wQqqmelh2baIBd8k93LnOgOg7BpJDW++eAY9ZQidsg==
+-----END RSA PRIVATE KEY-----"" > com_secrets.h
+	echo "#define APPUBLIC "-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrNIqilA4SU6XZfWNo5fZvkJD8
+aVj7e/eDz+T3RlxX7JwxJcV4r8fm1Vs9Z9GR5sQE9jm3YzVZYBxZaOYWsnK/rPt6
+MhpQGxxMaabWBBGsVrofFOugPcAHbYGB0RcArihDE+FVczEF8kPPOknhWNPQVV1G
+4DhS4WrOQHyeaBHAVwIDAQAB
+-----END PUBLIC KEY-----"" > com_secrets.h
+	
 
 clean:
-	rm -f global_secrets.h
+	rm -f ap_secrets.h
+	rm -f com_secrets.h

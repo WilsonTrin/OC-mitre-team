@@ -38,7 +38,7 @@
 
 // Includes from containerized build
 #include "ectf_params.h"
-#include "global_secrets.h"
+#include "ap_secrets.h"
 
 /********************************* CONSTANTS **********************************/
 

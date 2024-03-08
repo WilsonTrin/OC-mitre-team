@@ -26,7 +26,7 @@
 
 // Includes from containerized build
 #include "ectf_params.h"
-#include "global_secrets.h"
+#include "com_secrets.h"
 
 #ifdef POST_BOOT
 #include "led.h"
