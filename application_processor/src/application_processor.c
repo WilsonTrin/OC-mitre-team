@@ -67,13 +67,13 @@ uint16_t keys[COMPONENT_CNT];
 
 // Hash PIN 
 uint8_t hash_outpin[HASH_SIZE];
-char* data= AP_PIN;
-hash((uint8_t*)data, sizeof(AP_PIN), hash_outpin);
+uint8_t* data= AP_PIN;
+hash(data, sizeof(AP_PIN), hash_outpin);
 
 // Hash token 
 uint8_t hash_token[HASH_SIZE];
-char* data2= AP_TOKEN;
-hash((uint8_t*)data2, sizeof(AP_TOKEN), hash_token);
+uint8_t* data2= AP_TOKEN;
+hash(data2, sizeof(AP_TOKEN), hash_token);
 
 
 /******************************** TYPE DEFINITIONS ********************************/
