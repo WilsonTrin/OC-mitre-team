@@ -67,7 +67,7 @@ uint16_t keys[COMPONENT_CNT];
 
 // Hash PIN 
 uint8_t hash_outpin[HASH_SIZE];
-hash((uint8_t*) AP_PIN, sizeof(AP_PIN, hash_outpin));
+hash((uint8_t*)AP_PIN, sizeof(AP_PIN), hash_outpin);
 
 // Hash token 
 uint8_t hash_token[HASH_SIZE];
