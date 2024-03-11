@@ -408,7 +408,7 @@ int validate_pin() {
 
 
     //if (!strcmp(buf, AP_PIN)) {
-    if (comphash_outpin* == hash_outpin*) {
+    if (*comphash_outpin == *hash_outpin) {
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -428,7 +428,7 @@ int validate_token() {
     hash((uint8_t*)tokenEntered ,sizeof(tokenEntered), comphash_token);
 
     //if (!strcmp(buf, AP_TOKEN))
-    if (comphash_token* == hash_token*) {
+    if (*comphash_token == *hash_token) {
         print_debug("Token Accepted!\n");
         return SUCCESS_RETURN;
     }
