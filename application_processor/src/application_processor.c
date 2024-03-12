@@ -63,17 +63,17 @@
 
 /**************** seccurity******************************/
 // global
-uint16_t keys[COMPONENT_CNT];
+// uint16_t keys[COMPONENT_CNT];
 
-// Hash PIN 
-uint8_t hash_outpin[HASH_SIZE];
-char* data= AP_PIN;
-hash(data, 6, hash_outpin);
+// // Hash PIN 
+// uint8_t hash_outpin[HASH_SIZE];
+// char* data= AP_PIN;
+// hash(data, 6, hash_outpin);
 
-// Hash token 
-uint8_t hash_token[HASH_SIZE];
-char* data2= AP_TOKEN;
-hash(data2, 16, hash_token);
+// // Hash token 
+// uint8_t hash_token[HASH_SIZE];
+// char* data2= AP_TOKEN;
+// hash(data2, 16, hash_token);
 
 
 /******************************** TYPE DEFINITIONS ********************************/
@@ -403,7 +403,11 @@ int validate_pin() {
     char buf[50];
     recv_input("Enter pin: ", buf);
     char* pinEntered = buf;
- 
+    
+    uint8_t hash_outpin[HASH_SIZE];
+    // char* data= AP_PIN;
+    hash((uint8_t*) AP_PIN, sizeof(AP_PIN), hash_outpin);
+
     // Hash example encryption results 
     uint8_t comphash_outpin[HASH_SIZE];
     hash((uint8_t*) pinEntered,sizeof(pinEntered), comphash_outpin);
@@ -422,12 +426,14 @@ int validate_pin() {
 int validate_token() {
     char buf[50];
     recv_input("Enter token: ", buf);
-     
 
     char* tokenEntered = buf; 
     // Hash entered pin and compare 
     uint8_t comphash_token[HASH_SIZE];
     hash((uint8_t*)tokenEntered ,sizeof(tokenEntered), comphash_token);
+
+    uint8_t hash_token[HASH_SIZE];
+    hash((uint8_t*) AP_TOKEN, sizeof(AP_TOKEN), hash_token);
 
     //if (!strcmp(buf, AP_TOKEN))
     if (*comphash_token == *hash_token) {
