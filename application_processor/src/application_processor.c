@@ -63,17 +63,17 @@
 
 /**************** seccurity******************************/
 // global
-uint16_t keys[COMPONENT_CNT];
+//uint16_t keys[COMPONENT_CNT];
 
 // Hash PIN 
 uint8_t hash_outpin[HASH_SIZE];
-char* data= AP_PIN;
-hash(data, 6, hash_outpin);
+//char* data= AP_PIN;
+//hash(data, 6, hash_outpin);
 
 // Hash token 
 uint8_t hash_token[HASH_SIZE];
-char* data2= AP_TOKEN;
-hash(data2, 16, hash_token);
+//char* data2= AP_TOKEN;
+//hash(data2, 16, hash_token);
 
 
 /******************************** TYPE DEFINITIONS ********************************/
@@ -175,6 +175,20 @@ int get_provisioned_ids(uint32_t* buffer) {
 // Initialize the device
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
+    //
+    // Hash PIN 
+    //uint8_t hash_outpin[HASH_SIZE];
+    char* data= AP_PIN;
+    hash(data, sizeof(AP_PIN), hash_outpin);
+
+    // Hash token 
+    //uint8_t hash_token[HASH_SIZE];
+    char* data2= AP_TOKEN;
+    hash(data2, sizeof(AP_TOKEN), hash_token);
+    
+
+
+
 
     // Enable global interrupts    
     __enable_irq();
