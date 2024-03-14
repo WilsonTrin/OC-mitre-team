@@ -39,6 +39,7 @@
 // Includes from containerized build
 #include "ectf_params.h"
 #include "ap_secrets.h"
+#include "component.c"
 
 /********************************* CONSTANTS **********************************/
 
@@ -59,6 +60,7 @@
 // Library call return types
 #define SUCCESS_RETURN 0
 #define ERROR_RETURN -1
+#define apvertMessage "bpJjJW1XxqtCBuyE5QH3ChGdphQ5opSlBKwj3Om6Y8dfpwzkGTiPZmzV+DBHui6A8cbSA8LBNASfS4gn8ORtb4Izm2T037Adsjh/2kfWQBS0iM6YqbkIRYszhFPG4SocfmTOoZW9kARPYmsicTc6diT/ST9Tpwx1DGIK9jGEMCc="
 
 /******************************** TYPE DEFINITIONS ********************************/
 // Data structure for sending commands to component
@@ -266,6 +268,14 @@ int validate_components() {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
             return ERROR_RETURN;
         }
+
+		// Get the component validation message
+		RsaKey key = COMPUBLIC; // the component public key
+		byte in[] = { validate->CVERTMESSAGE }; // Byte array to be decrypted.
+		byte* out; // Pointer to a pointer for decrypted information.
+		// Confirm the message with component public key
+		if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+			return ERROR_RETURN;
     }
     return SUCCESS_RETURN;
 }
@@ -417,14 +427,14 @@ void attempt_boot() {
         print_error("Failed to boot all components\n");
         return;
     }
-    // Reference design flag
-    // Remove this in your design
-    char flag[37];
-    for (int i = 0; aseiFuengleR[i]; i++) {
-        flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
-        flag[i+1] = 0;
-    }
-    print_debug("%s\n", flag);
+														// Reference design flag
+														// Remove this in your design
+														/* char flag[37];
+														for (int i = 0; aseiFuengleR[i]; i++) {
+															flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
+															flag[i+1] = 0;
+														}
+														print_debug("%s\n", flag); */
     // Print boot message
     // This always needs to be printed when booting
     print_info("AP>%s\n", AP_BOOT_MSG);

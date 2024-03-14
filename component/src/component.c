@@ -46,6 +46,7 @@
 #define ATTESTATION_DATE "08/08/08"
 #define ATTESTATION_CUSTOMER "Fritz"
 */
+#define CVERTMESSAGE "DLK1fU2x1uq+DbXL0oUvK4iQxjcw87Bhkpf6DdHS6lTH+bFxIAzVWBOgbWs7P/6yiRpCPS8BvRcgmzAnaDqr1VPxq9nyLlmeSqcvpV2TsbfcE8A3mTfyTl9V/PwmaiL8Bn5Wep+lD4q1D87gMKK+zt7xP0dpZ95ATbufA3eJoc8="
 
 /******************************** TYPE DEFINITIONS ********************************/
 // Commands received by Component using 32 bit integer
@@ -190,9 +191,12 @@ void process_scan() {
 
 void process_validate() {
     // The AP requested a validation. Respond with the Component ID
-    validate_message* packet = (validate_message*) transmit_buffer;
-    packet->component_id = COMPONENT_ID;
+    validate_message* packet1 = (validate_message*) transmit_buffer;
+    packet1->component_id = COMPONENT_ID;
     send_packet_and_ack(sizeof(validate_message), transmit_buffer);
+	
+	// The AP requested a validation. Respond with encrypted message
+    send_packet_and_ack(sizeof(CVERTMESSAGE), transmit_buffer);
 }
 
 void process_attest() {
