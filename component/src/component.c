@@ -99,10 +99,21 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
 void secure_send(uint8_t* buffer, uint8_t len) {
     // Get the component validation message
 	RsaKey * key = APPUBLIC; // the AP public key
-	byte* out; // Pointer to a pointer for decrypted information.
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    byte* out; // Pointer to a pointer for decrypted information.
     word32 outLen = 0;
     int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
 
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
     if(result < 0)
     {
         return ERROR_RETURN;
@@ -123,9 +134,21 @@ void secure_send(uint8_t* buffer, uint8_t len) {
 int secure_receive(uint8_t* buffer) {
     int len = wait_and_receive_packet(buffer);  // Recieve encrypted packet and store the returned length of the packet.
     RsaKey * key = COMPRIVATE; // the component Private key
-	byte* out; // Pointer to a pointer for decrypted information.
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }	
+    byte* out; // Pointer to a pointer for decrypted information.
 
     ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
     if(ret == RSA_PAD_E)
     {
         return ERROR_RETURN;

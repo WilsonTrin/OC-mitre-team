@@ -122,16 +122,27 @@ flash_entry flash_status;
 
 */
 int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
-		// Get the component validation message
-		RsaKey * key = COMPUBLIC; // the component public key
-		byte* out; // Pointer to a pointer for encrypted information.
-        word32 outLen = 0;
-        int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
+	// Get the component validation message
+	RsaKey * key = COMPUBLIC; // the component public key
+    RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+	byte* out; // Pointer to a pointer for encrypted information.
+    word32 outLen = 0;
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
 
-        if(result < 0)
-        {
-            return ERROR_RETURN;
-        }
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(result < 0)
+    {
+        return ERROR_RETURN;
+    }
     return send_packet(address, outLen, out);
 }
 
@@ -150,9 +161,20 @@ int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     int len = poll_and_receive_packet(address, buffer);
 
     RsaKey * key = APPRIVATE; // the AP Private key
-	byte* out; // Pointer to a pointer for decrypted information.
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    byte* out; // Pointer to a pointer for decrypted information.
 
     ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
     if(ret == RSA_PAD_E)
     {
         return ERROR_RETURN;
