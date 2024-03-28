@@ -418,12 +418,15 @@ int validate_pin() {
     
     uint8_t hash_outpin[HASH_SIZE];
     // char* data= AP_PIN;
-    hash((uint8_t*) AP_PIN, sizeof(AP_PIN), hash_outpin);
+    hash((uint8_t*) AP_PIN, strlen(AP_PIN), hash_outpin);
 
     // Hash example encryption results 
     uint8_t comphash_outpin[HASH_SIZE];
     hash((uint8_t*) pinEntered,strlen(pinEntered), comphash_outpin);
-
+    // print_debug("hashes: first...");
+    // print_hex_info(comphash_outpin, HASH_SIZE);
+    // print_debug("second...");
+    // print_hex_info(hash_outpin, HASH_SIZE); // may need to deref here
 
     //if (!strcmp(buf, AP_PIN)) {
     if (!memcmp(comphash_outpin, hash_outpin, HASH_SIZE )) { //compare buffers of hashed values
