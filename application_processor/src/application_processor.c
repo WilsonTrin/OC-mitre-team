@@ -61,19 +61,16 @@
 #define ERROR_RETURN -1
 
 
-/**************** seccurity******************************/
+/*****************security******************************/
 // global
-//uint16_t keys[COMPONENT_CNT];
+
 
 // Hash PIN 
-uint8_t hash_outpin[HASH_SIZE];
-//char* data= AP_PIN;
-//hash(data, 6, hash_outpin);
+uint8_t hash_outpin[HASH_SIZE]; //variable to store hashed pin value
 
 // Hash token 
-uint8_t hash_token[HASH_SIZE];
-//char* data2= AP_TOKEN;
-//hash(data2, 16, hash_token);
+uint8_t hash_token[HASH_SIZE]; //variable to store hashed token value
+
 
 
 /******************************** TYPE DEFINITIONS ********************************/
@@ -175,16 +172,17 @@ int get_provisioned_ids(uint32_t* buffer) {
 // Initialize the device
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
-    //
+    
     // Hash PIN 
-    //uint8_t hash_outpin[HASH_SIZE];
-    char* data= AP_PIN;
-    hash((uint8_t*)data, sizeof(AP_PIN), hash_outpin);
+    char data[]= AP_PIN; //create character array out of plaintext pin data
+    hash((uint8_t*)(&data), strlen(data), hash_outpin);  
+    //hash_outpin-A pointer to a buffer of length HASH_SIZE (16 bytes) 
+    //where the resulting hash output will be written to
+
 
     // Hash token 
-    //uint8_t hash_token[HASH_SIZE];
-    char* data2= AP_TOKEN;
-    hash((uint8_t*)data2, sizeof(AP_TOKEN), hash_token);
+    char data2[]= AP_TOKEN; //create character array out of plaintext token data
+    hash((uint8_t*)(&data2), strlen(data2), hash_token);
     
 
 
@@ -417,14 +415,18 @@ int validate_pin() {
     char buf[50];
     recv_input("Enter pin: ", buf);
     char* pinEntered = buf;
- 
+    
+    uint8_t hash_outpin[HASH_SIZE];
+    // char* data= AP_PIN;
+    hash((uint8_t*) AP_PIN, sizeof(AP_PIN), hash_outpin);
+
     // Hash example encryption results 
     uint8_t comphash_outpin[HASH_SIZE];
-    hash((uint8_t*) pinEntered,sizeof(pinEntered), comphash_outpin);
+    hash((uint8_t*) pinEntered,strlen(pinEntered), comphash_outpin);
 
 
     //if (!strcmp(buf, AP_PIN)) {
-    if (*comphash_outpin == *hash_outpin) {
+    if (!memcmp(comphash_outpin, hash_outpin, HASH_SIZE )) { //compare buffers of hashed values
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -436,12 +438,14 @@ int validate_pin() {
 int validate_token() {
     char buf[50];
     recv_input("Enter token: ", buf);
-     
 
     char* tokenEntered = buf; 
     // Hash entered pin and compare 
     uint8_t comphash_token[HASH_SIZE];
     hash((uint8_t*)tokenEntered ,sizeof(tokenEntered), comphash_token);
+
+    uint8_t hash_token[HASH_SIZE];
+    hash((uint8_t*) AP_TOKEN, sizeof(AP_TOKEN), hash_token);
 
     //if (!strcmp(buf, AP_TOKEN))
     if (*comphash_token == *hash_token) {
