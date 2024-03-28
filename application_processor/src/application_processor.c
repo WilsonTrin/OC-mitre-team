@@ -38,7 +38,8 @@
 
 // Includes from containerized build
 #include "ectf_params.h"
-#include "global_secrets.h"
+#include "ap_secrets.h"
+#include "component.c"
 
 /********************************* CONSTANTS **********************************/
 
@@ -59,6 +60,7 @@
 // Library call return types
 #define SUCCESS_RETURN 0
 #define ERROR_RETURN -1
+#define apvertMessage "bpJjJW1XxqtCBuyE5QH3ChGdphQ5opSlBKwj3Om6Y8dfpwzkGTiPZmzV+DBHui6A8cbSA8LBNASfS4gn8ORtb4Izm2T037Adsjh/2kfWQBS0iM6YqbkIRYszhFPG4SocfmTOoZW9kARPYmsicTc6diT/ST9Tpwx1DGIK9jGEMCc="
 
 /******************************** TYPE DEFINITIONS ********************************/
 // Data structure for sending commands to component
@@ -120,7 +122,17 @@ flash_entry flash_status;
 
 */
 int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
-    return send_packet(address, len, buffer);
+		// Get the component validation message
+		RsaKey * key = COMPUBLIC; // the component public key
+		byte* out; // Pointer to a pointer for encrypted information.
+        word32 outLen = 0;
+        int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
+
+        if(result < 0)
+        {
+            return ERROR_RETURN;
+        }
+    return send_packet(address, outLen, out);
 }
 
 /**
@@ -135,7 +147,17 @@ int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
  * This function must be implemented by your team to align with the security requirements.
 */
 int secure_receive(i2c_addr_t address, uint8_t* buffer) {
-    return poll_and_receive_packet(address, buffer);
+    int len = poll_and_receive_packet(address, buffer);
+
+    RsaKey * key = APPRIVATE; // the AP Private key
+	byte* out; // Pointer to a pointer for decrypted information.
+
+    ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    if(ret == RSA_PAD_E)
+    {
+        return ERROR_RETURN;
+    }
+    return ret; // number of bytes recieved 
 }
 
 /**
@@ -266,6 +288,14 @@ int validate_components() {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
             return ERROR_RETURN;
         }
+
+		// Get the component validation message
+		RsaKey key = COMPUBLIC; // the component public key
+		byte in[] = { validate->CVERTMESSAGE }; // Byte array to be decrypted.
+		byte* out; // Pointer to a pointer for decrypted information.
+		// Confirm the message with component public key
+		if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+			return ERROR_RETURN;
     }
     return SUCCESS_RETURN;
 }
@@ -417,14 +447,14 @@ void attempt_boot() {
         print_error("Failed to boot all components\n");
         return;
     }
-    // Reference design flag
-    // Remove this in your design
-    char flag[37];
-    for (int i = 0; aseiFuengleR[i]; i++) {
-        flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
-        flag[i+1] = 0;
-    }
-    print_debug("%s\n", flag);
+														// Reference design flag
+														// Remove this in your design
+														/* char flag[37];
+														for (int i = 0; aseiFuengleR[i]; i++) {
+															flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
+															flag[i+1] = 0;
+														}
+														print_debug("%s\n", flag); */
     // Print boot message
     // This always needs to be printed when booting
     print_info("AP>%s\n", AP_BOOT_MSG);
