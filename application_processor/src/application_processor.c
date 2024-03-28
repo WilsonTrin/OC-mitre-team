@@ -122,7 +122,17 @@ flash_entry flash_status;
 
 */
 int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
-    return send_packet(address, len, buffer);
+		// Get the component validation message
+		RsaKey * key = COMPUBLIC; // the component public key
+		byte* out; // Pointer to a pointer for encrypted information.
+        word32 outLen = 0;
+        int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
+
+        if(result < 0)
+        {
+            return ERROR_RETURN;
+        }
+    return send_packet(address, outLen, out);
 }
 
 /**
@@ -137,7 +147,17 @@ int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
  * This function must be implemented by your team to align with the security requirements.
 */
 int secure_receive(i2c_addr_t address, uint8_t* buffer) {
-    return poll_and_receive_packet(address, buffer);
+    int len = poll_and_receive_packet(address, buffer);
+
+    RsaKey * key = APPRIVATE; // the AP Private key
+	byte* out; // Pointer to a pointer for decrypted information.
+
+    ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    if(ret == RSA_PAD_E)
+    {
+        return ERROR_RETURN;
+    }
+    return ret; // number of bytes recieved 
 }
 
 /**
