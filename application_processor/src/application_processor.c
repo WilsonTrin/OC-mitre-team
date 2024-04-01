@@ -429,7 +429,7 @@ int validate_pin() {
     // print_hex_info(hash_outpin, HASH_SIZE); // may need to deref here
 
     //if (!strcmp(buf, AP_PIN)) {
-    if (!memcmp(comphash_outpin, hash_outpin, HASH_SIZE )) { //compare buffers of hashed values
+    if (memcmp(comphash_outpin, hash_outpin, HASH_SIZE ) == 0) { //compare buffers of hashed values
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -445,13 +445,13 @@ int validate_token() {
     char* tokenEntered = buf; 
     // Hash entered pin and compare 
     uint8_t comphash_token[HASH_SIZE];
-    hash((uint8_t*)tokenEntered ,sizeof(tokenEntered), comphash_token);
+    hash((uint8_t*)tokenEntered ,strlen(tokenEntered), comphash_token);
 
     uint8_t hash_token[HASH_SIZE];
-    hash((uint8_t*) AP_TOKEN, sizeof(AP_TOKEN), hash_token);
+    hash((uint8_t*) AP_TOKEN, strlen(AP_TOKEN), hash_token);
 
     //if (!strcmp(buf, AP_TOKEN))
-    if (*comphash_token == *hash_token) {
+    if (memcmp(comphash_token, hash_token, HASH_SIZE ) == 0) {
         print_debug("Token Accepted!\n");
         return SUCCESS_RETURN;
     }
