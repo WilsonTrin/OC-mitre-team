@@ -97,7 +97,28 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
  * This function must be implemented by your team to align with the security requirements.
 */
 void secure_send(uint8_t* buffer, uint8_t len) {
-    send_packet_and_ack(len, buffer); 
+    // Get the component validation message
+	RsaKey * key = APPUBLIC; // the AP public key
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    byte* out; // Pointer to a pointer for decrypted information.
+    word32 outLen = 0;
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
+
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(result < 0)
+    {
+        return ERROR_RETURN;
+    }
+    send_packet_and_ack(outlen, out);   // Send the packet
 }
 
 /**
@@ -111,7 +132,28 @@ void secure_send(uint8_t* buffer, uint8_t len) {
  * This function must be implemented by your team to align with the security requirements.
 */
 int secure_receive(uint8_t* buffer) {
-    return wait_and_receive_packet(buffer);
+    int len = wait_and_receive_packet(buffer);  // Recieve encrypted packet and store the returned length of the packet.
+    RsaKey * key = COMPRIVATE; // the component Private key
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }	
+    byte* out; // Pointer to a pointer for decrypted information.
+
+    ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    
+    rngReturn = wc_FreeRng(rng)
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(ret == RSA_PAD_E)
+    {
+        return ERROR_RETURN;
+    }
+    return ret; // number of bytes recieved 
 }
 
 /******************************* FUNCTION DEFINITIONS *********************************/
