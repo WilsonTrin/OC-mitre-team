@@ -29,6 +29,9 @@
 #include "host_messaging.h"
 #ifdef CRYPTO_EXAMPLE
 #include "simple_crypto.h"
+#include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/random.h"
+#include "wolfssl/mcapi/crypto.h"
 #endif
 
 #ifdef POST_BOOT
@@ -176,7 +179,7 @@ int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     {
         return ERROR_RETURN;
     }
-    if(ret == RSA_PAD_E)
+    if(ret == -201) // RSA_PAD_E
     {
         return ERROR_RETURN;
     }
@@ -305,7 +308,8 @@ int validate_components() {
             return ERROR_RETURN;
         }
 
-        validate_message* validate = (validate_message) receive_buffer;
+        validate_message* validate = receive_buffer; // let it auto-cast I suppose
+
         // Check that the result is correct
         if (validate->component_id != flash_status.component_ids[i]) {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
@@ -313,7 +317,7 @@ int validate_components() {
         }
 
         // Get the component validation message
-        RsaKey key = COMPUBLIC; // the component public key
+        RsaKey * key = COMPUBLIC; // the component public key
         byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
         byte out; // Pointer to a pointer for decrypted information.
         // Confirm the message with component public key
@@ -326,14 +330,16 @@ int validate_components() {
 int boot_components() {
     // Buffers for board link communication
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
+    uint8_t inByte2[sizeof(apvertMessage)] = apvertMessage;
+    uint8_t outByte2[MAX_I2C_MESSAGE_LEN - 1];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
-    byte inByte[sizeof(apvertMessage)] = apvertMessage;
+    // unsigned char inByte[sizeof(apvertMessage)] = apvertMessage;
     int ret;
-    RsaKey = APPRIVATE;
+    RsaKey* key = APPRIVATE;
     RNG rng;
-    ret = wc_init(&rng);
-    byte outByte[MAX_I2C_MESSAGE_LEN - 1];
-    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),key,rng);
+    ret = wc_initRng(&rng);
+    // unsigned char outByte2[MAX_I2C_MESSAGE_LEN - 1];
+    ret = wc_RsaSSL_Sign(inByte2, sizeof(inByte2),outByte2, sizeof(outByte2),key,&rng);
 
 
     // Send boot command to each component
@@ -344,7 +350,8 @@ int boot_components() {
         // Create command message
         command_message* command = (command_message*) transmit_buffer;
         command->opcode = COMPONENT_CMD_BOOT;
-        command->params = outByte;
+        memcpy(command->params, outByte2, sizeof(outByte2));
+        // command->params = outByte2;
 
 
         // Send out command and receive result

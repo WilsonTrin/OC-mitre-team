@@ -218,7 +218,7 @@ void component_process_cmd() {
 int process_boot(command_message* command) {
     // The AP requested a boot. Set component_boot for the main loop and
     // respond with the boot message
-    RsaKey key = COMPUBLIC;               // the component public key
+    RsaKey *key = COMPUBLIC;               // the component public key
     byte in[] = command->params; // Byte array to be decrypted.
     byte out; // Pointer to a pointer for decrypted information.
     // Confirm the message with component public key
