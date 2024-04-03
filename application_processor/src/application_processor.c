@@ -75,6 +75,7 @@ typedef struct {
 // Data type for receiving a validate message
 typedef struct {
     uint32_t component_id;
+    uint8_t cVertMessage[MAX_I2C_MESSAGE_LEN-4];
 } validate_message;
 
 // Data type for receiving a scan message
@@ -304,20 +305,20 @@ int validate_components() {
             return ERROR_RETURN;
         }
 
-        validate_message* validate = (validate_message*) receive_buffer;
+        validate_message* validate = (validate_message) receive_buffer;
         // Check that the result is correct
         if (validate->component_id != flash_status.component_ids[i]) {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
             return ERROR_RETURN;
         }
 
-		// Get the component validation message
-		RsaKey key = COMPUBLIC; // the component public key
-		byte in[] = { validate->CVERTMESSAGE }; // Byte array to be decrypted.
-		byte* out; // Pointer to a pointer for decrypted information.
-		// Confirm the message with component public key
-		if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
-			return ERROR_RETURN;
+        // Get the component validation message
+        RsaKey key = COMPUBLIC; // the component public key
+        byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
+        byte out; // Pointer to a pointer for decrypted information.
+        // Confirm the message with component public key
+        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+            return ERROR_RETURN;
     }
     return SUCCESS_RETURN;
 }
@@ -326,16 +327,26 @@ int boot_components() {
     // Buffers for board link communication
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    byte inByte[sizeof(apvertMessage)] = apvertMessage;
+    int ret;
+    RsaKey = APPRIVATE;
+    RNG rng;
+    ret = wc_init(&rng);
+    byte outByte[MAX_I2C_MESSAGE_LEN - 1];
+    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),key,rng);
+
 
     // Send boot command to each component
     for (unsigned i = 0; i < flash_status.component_cnt; i++) {
         // Set the I2C address of the component
         i2c_addr_t addr = component_id_to_i2c_addr(flash_status.component_ids[i]);
-        
+
         // Create command message
         command_message* command = (command_message*) transmit_buffer;
         command->opcode = COMPONENT_CMD_BOOT;
-        
+        command->params = outByte;
+
+
         // Send out command and receive result
         int len = issue_cmd(addr, transmit_buffer, receive_buffer);
         if (len == ERROR_RETURN) {

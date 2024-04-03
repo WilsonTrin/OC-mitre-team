@@ -67,6 +67,7 @@ typedef struct {
 
 typedef struct {
     uint32_t component_id;
+    uint8_t cVertMessage[MAX_I2C_MESSAGE_LEN-4];
 } validate_message;
 
 typedef struct {
@@ -214,14 +215,24 @@ void component_process_cmd() {
     }
 }
 
-void process_boot() {
-    // The AP requested a boot. Set `component_boot` for the main loop and
+int process_boot(command_message* command) {
+    // The AP requested a boot. Set component_boot for the main loop and
     // respond with the boot message
-    uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
-    memcpy((void*)transmit_buffer, COMPONENT_BOOT_MSG, len);
-    send_packet_and_ack(len, transmit_buffer);
-    // Call the boot function
-    boot();
+    RsaKey key = COMPUBLIC;               // the component public key
+    byte in[] = command->params; // Byte array to be decrypted.
+    byte out; // Pointer to a pointer for decrypted information.
+    // Confirm the message with component public key
+    if (wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+        return ERROR_RETURN;
+    else {
+
+        uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
+        memcpy((void)transmit_buffer, COMPONENT_BOOT_MSG, len);
+        send_packet_and_ack(len, transmit_buffer);
+        // Call the boot function
+        boot();
+        return 0
+    }
 }
 
 void process_scan() {
@@ -233,12 +244,26 @@ void process_scan() {
 
 void process_validate() {
     // The AP requested a validation. Respond with the Component ID
+    uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
+    uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    byte inByte[sizeof(apvertMessage)] = apvertMessage;
+    int ret;
+    RsaKey key = COMPRIVATE;
+    RNG rng;
+    ret = wc_InitRNG(&rng);
+    byte outByte[MAX_I2C_MESSAGE_LEN - 1];
+    //Sign with the CVERTMESSAGE  with the COM private key here:
+    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),key,rng);
+    byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
+    ret = wc_FreeRNG(&rng);
+    // create a packet with component id and encrypted message
     validate_message* packet1 = (validate_message*) transmit_buffer;
     packet1->component_id = COMPONENT_ID;
+    packet1->cVertMessage = outByte;
+
+    //Send the signed verification message here: 
     send_packet_and_ack(sizeof(validate_message), transmit_buffer);
-	
-	// The AP requested a validation. Respond with encrypted message
-    send_packet_and_ack(sizeof(CVERTMESSAGE), transmit_buffer);
+
 }
 
 void process_attest() {
