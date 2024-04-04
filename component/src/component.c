@@ -23,6 +23,9 @@
 
 #include "simple_i2c_peripheral.h"
 #include "board_link.h"
+#include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/random.h"
+#include "wolfssl/mcapi/crypto.h"
 
 
 // Includes from containerized build
@@ -295,13 +298,13 @@ void process_validate() {
     // The AP requested a validation. Respond with the Component ID
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
-    byte inByte[sizeof(apvertMessage)] = apvertMessage;
+    uint8_t inByte[sizeof(apvertMessage)] = apvertMessage;
     int ret;
     RsaKey comPrivKey; // the Component Private Key
     comPrivKey=setPrivRSAKey(COMPRIVATE);
     RNG rng;
     ret = wc_InitRNG(&rng);
-    byte outByte[MAX_I2C_MESSAGE_LEN - 1];
+    uint8_t outByte[MAX_I2C_MESSAGE_LEN - 1];
     //Sign with the CVERTMESSAGE  with the COM private key here:
     ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,rng);
     byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
@@ -309,7 +312,7 @@ void process_validate() {
     // create a packet with component id and encrypted message
     validate_message* packet1 = (validate_message*) transmit_buffer;
     packet1->component_id = COMPONENT_ID;
-    packet1->cVertMessage = outByte;
+    memcpy(packet1->cVertMessage, outByte, sizeof(outByte));
 
     //Send the signed verification message here: 
     secure_send(sizeof(validate_message), transmit_buffer);
