@@ -100,7 +100,7 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
  * Securely send data over I2C. This function is utilized in POST_BOOT functionality.
  * This function must be implemented by your team to align with the security requirements.
 */
-void secure_send(uint8_t* buffer, uint8_t len) {
+void secure_send(uint8_t len, uint8_t* buffer) {
     // Get the component validation message
 	RsaKey * key = APPUBLIC; // the AP public key
 	RNG * rng;
@@ -231,7 +231,7 @@ int process_boot(command_message* command) {
 
         uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
         memcpy((void)transmit_buffer, COMPONENT_BOOT_MSG, len);
-        send_packet_and_ack(len, transmit_buffer);
+        secure_send(len, transmit_buffer);
         // Call the boot function
         boot();
         return 0
@@ -242,7 +242,7 @@ void process_scan() {
     // The AP requested a scan. Respond with the Component ID
     scan_message* packet = (scan_message*) transmit_buffer;
     packet->component_id = COMPONENT_ID;
-    send_packet_and_ack(sizeof(scan_message), transmit_buffer);
+    secure_send(sizeof(scan_message), transmit_buffer);
 }
 
 void process_validate() {
@@ -265,7 +265,7 @@ void process_validate() {
     memcpy(packet1->cVertMessage, outByte, sizeof(outByte));
 
     //Send the signed verification message here: 
-    send_packet_and_ack(sizeof(validate_message), transmit_buffer);
+    secure_send(sizeof(validate_message), transmit_buffer);
 
 }
 
@@ -273,7 +273,7 @@ void process_attest() {
     // The AP requested attestation. Respond with the attestation data
     uint8_t len = sprintf((char*)transmit_buffer, "LOC>%s\nDATE>%s\nCUST>%s\n",
                 ATTESTATION_LOC, ATTESTATION_DATE, ATTESTATION_CUSTOMER) + 1;
-    send_packet_and_ack(len, transmit_buffer);
+    secure_send(len, transmit_buffer);
 }
 
 /*********************************** MAIN *************************************/
@@ -291,7 +291,7 @@ int main(void) {
     LED_On(LED2);
 
     while (1) {
-        wait_and_receive_packet(receive_buffer);
+        secure_receive(receive_buffer);
 
         component_process_cmd();
     }
