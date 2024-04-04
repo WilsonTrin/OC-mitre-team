@@ -11,11 +11,24 @@
  * @copyright Copyright (c) 2024 The MITRE Corporation
  */
 
-#if CRYPTO_EXAMPLE
+// #if CRYPTO_EXAMPLE
 
 #include "simple_crypto.h"
 #include <stdint.h>
 #include <string.h>
+// #include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/random.h"
+// #include "wolfssl/mcapi/crypto.h"
+// #include "wolfssl/openssl/rsa.h"
+// #include "wolfssl/openssl/pem.h"
+// #include "wolfssl/wolfcrypt/rsa.h"
+// #include "wolfssl/wolfcrypt/asn.h"
+// #include "wolfssl/wolfcrypt/asn_public.h"
+// #include "wolfssl/wolfssl/wolfcrypt/asn_public.h"
+#include "wolfssl/wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/asn.h"
+// #include "wolfssl/openssl/asn1.h"
+
 
 /******************************** FUNCTION PROTOTYPES ********************************/
 /** @brief Encrypts plaintext using a symmetric cipher
@@ -110,7 +123,8 @@ RsaKey setPubRSAKey (char* pemPubKey)
     int pemSz=sizeof(pemPubKey);
     char* saveBuff;
     int saveBuffSz=0;
-   saveBuffSz=wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz);
+   
+    saveBuffSz=wc_PemToDer(pemPubKey, pemSz, 12/*PUBLICKEY_TYPE*/, *saveBuff, NULL, NULL, NULL); //wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz); // here?
 
     RsaKey pub;
     word32 idx = 0;
@@ -123,7 +137,7 @@ RsaKey setPubRSAKey (char* pemPubKey)
         // error parsing public key
     }
 
-    return pub
+    return pub;
 
 }
 
@@ -134,7 +148,7 @@ RsaKey setPrivRSAKey (char* privPubKey)
     char* saveBuff ;
     int saveBuffSz=0;
 
-    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff*,saveBuffSz,RSA_TYPE);
+    saveBuffSz=wolfSSL_CertPemToDer(privPubKey,pemSz,*saveBuff,saveBuffSz,11); //RSA_TYPE I think
 
     RsaKey priv;
     word32 idx = 0;
@@ -149,4 +163,4 @@ RsaKey setPrivRSAKey (char* privPubKey)
     return priv;
 }
 
-#endif
+// #endif
