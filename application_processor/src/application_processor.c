@@ -128,7 +128,7 @@ flash_entry flash_status;
 */
 int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
 	// Get the component validation message
-	RsaKey  compPubKey; // the component public key
+	RsaKey  comPubKey; // the component public key
     comPubKey= setPubRSAKey(COMPUBLIC);
     RNG * rng;
     int rngReturn = wc_InitRng(rng);
@@ -321,7 +321,7 @@ int validate_components() {
         }
         print_debug("320\n");
         // Get the component validation message
-        RsaKey  compPubKey; // the component public key
+        RsaKey  comPubKey; // the component public key
         comPubKey= setPubRSAKey(COMPUBLIC);
         byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
         byte out; // Pointer to a pointer for decrypted information.
