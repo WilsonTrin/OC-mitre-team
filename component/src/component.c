@@ -23,9 +23,16 @@
 
 #include "simple_i2c_peripheral.h"
 #include "board_link.h"
-#include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/random.h"
 #include "wolfssl/mcapi/crypto.h"
+#include "wolfssl/ssl.h"
+// Todo:
+    // move WolfSSL into component's directory.
+    // finish bugs here
+    // verify everything works together correctly
+// #include "wolfssl/ssl.h"
+// #include "wolfssl/wolfcrypt/random.h"
+// #include "wolfssl/mcapi/crypto.h"
 
 
 // Includes from containerized build
@@ -278,11 +285,11 @@ int process_boot(command_message* command) {
     else {
 
         uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
-        memcpy((void)transmit_buffer, COMPONENT_BOOT_MSG, len);
+        memcpy(transmit_buffer, COMPONENT_BOOT_MSG, len);
         secure_send(len, transmit_buffer);
         // Call the boot function
         boot();
-        return 0
+        return 0;
     }
 }
 
@@ -298,16 +305,17 @@ void process_validate() {
     // The AP requested a validation. Respond with the Component ID
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
-    uint8_t inByte[sizeof(apvertMessage)] = apvertMessage;
+    uint8_t outByte[MAX_I2C_MESSAGE_LEN - 1];
+    uint8_t inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
     int ret;
     RsaKey comPrivKey; // the Component Private Key
     comPrivKey=setPrivRSAKey(COMPRIVATE);
     RNG rng;
     ret = wc_InitRNG(&rng);
-    uint8_t outByte[MAX_I2C_MESSAGE_LEN - 1];
+    
     //Sign with the CVERTMESSAGE  with the COM private key here:
     ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,rng);
-    byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
+    // byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
     ret = wc_FreeRNG(&rng);
     // create a packet with component id and encrypted message
     validate_message* packet1 = (validate_message*) transmit_buffer;
