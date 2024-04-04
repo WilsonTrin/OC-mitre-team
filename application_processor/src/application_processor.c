@@ -30,8 +30,6 @@
 #ifdef CRYPTO_EXAMPLE
 #include "simple_crypto.h"
 #include "wolfssl/ssl.h"
-#include "wolfssl/wolfcrypt/random.h"
-#include "wolfssl/mcapi/crypto.h"
 #endif
 
 #ifdef POST_BOOT
@@ -42,6 +40,9 @@
 // Includes from containerized build
 #include "ectf_params.h"
 #include "ap_secrets.h"
+// #include <rsa.h>
+#include "wolfssl/wolfcrypt/random.h"
+#include "wolfssl/mcapi/crypto.h"
 //#include "component.c"
 
 /********************************* CONSTANTS **********************************/
@@ -291,12 +292,13 @@ int validate_components() {
     // Buffers for board link communication
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    print_debug("295\n");
 
     // Send validate command to each component
     for (unsigned i = 0; i < flash_status.component_cnt; i++) {
         // Set the I2C address of the component
         i2c_addr_t addr = component_id_to_i2c_addr(flash_status.component_ids[i]);
-
+        print_debug("301\n");
         // Create command message
         command_message* command = (command_message*) transmit_buffer;
         command->opcode = COMPONENT_CMD_VALIDATE;
@@ -315,14 +317,19 @@ int validate_components() {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
             return ERROR_RETURN;
         }
-
+        print_debug("320\n");
         // Get the component validation message
         RsaKey * key = COMPUBLIC; // the component public key
         byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
         byte out; // Pointer to a pointer for decrypted information.
+        print_debug("before verifyInLine\n");
         // Confirm the message with component public key
-        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0) {
+            print_debug("error_return\n");
             return ERROR_RETURN;
+        }
+
+        print_debug("331\n");
     }
     return SUCCESS_RETURN;
 }
@@ -337,7 +344,7 @@ int boot_components() {
     int ret;
     RsaKey* key = APPRIVATE;
     RNG rng;
-    ret = wc_initRng(&rng);
+    ret = wc_InitRng(&rng);
     // unsigned char outByte2[MAX_I2C_MESSAGE_LEN - 1];
     ret = wc_RsaSSL_Sign(inByte2, sizeof(inByte2),outByte2, sizeof(outByte2),key,&rng);
 
@@ -478,6 +485,7 @@ int validate_token() {
 
 // Boot the components and board if the components validate
 void attempt_boot() {
+    print_debug("booting\n");
     if (validate_components()) {
         print_error("Components could not be validated\n");
         return;
