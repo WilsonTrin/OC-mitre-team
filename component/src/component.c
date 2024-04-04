@@ -166,7 +166,7 @@ int secure_receive(uint8_t* buffer) {
 RsaKey setPubRSAKey (char* pemPubKey)
 {
     int pemSz=sizeof(pemPubKey);
-    char saveBuff[];
+    char* saveBuff;
     int saveBuffSz=0;
    saveBuffSz=wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz);
 
@@ -189,7 +189,7 @@ RsaKey setPubRSAKey (char* pemPubKey)
 RsaKey setPrivRSAKey (char* privPubKey)
 {
     int pemSz=sizeof(privPubKey);
-    char saveBuff [];
+    char* saveBuff ;
     int saveBuffSz=0;
 
     saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff*,saveBuffSz,RSA_TYPE);

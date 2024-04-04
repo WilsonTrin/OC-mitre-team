@@ -324,7 +324,7 @@ int validate_components() {
         RsaKey  comPubKey; // the component public key
         comPubKey= setPubRSAKey(COMPUBLIC);
         byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
-        byte out; // Pointer to a pointer for decrypted information.
+        byte* out; // Pointer to a pointer for decrypted information.
         print_debug("before verifyInLine\n");
         // Confirm the message with component public key
         if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &comPubKey) < 0) {
