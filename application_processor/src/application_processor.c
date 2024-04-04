@@ -128,7 +128,8 @@ flash_entry flash_status;
 */
 int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
 	// Get the component validation message
-	RsaKey * key = COMPUBLIC; // the component public key
+	RsaKey  compPubKey; // the component public key
+    comPubKey= setPubRSAKey(COMPUBLIC);
     RNG * rng;
     int rngReturn = wc_InitRng(rng);
     if(rngReturn < 0)
@@ -137,7 +138,7 @@ int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
     }
 	byte* out; // Pointer to a pointer for encrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng);
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, rng);
 
     rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
@@ -165,7 +166,8 @@ int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
 int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     int len = poll_and_receive_packet(address, buffer);
 
-    RsaKey * key = APPRIVATE; // the AP Private key
+    RsaKey apPrivKey; // the AP Private key
+    apPrivKey=setPrivRSAKey(APPRIVATE);
 	RNG * rng;
     int rngReturn = wc_InitRng(rng);
     if(rngReturn < 0)
@@ -174,7 +176,7 @@ int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     }
     byte* out; // Pointer to a pointer for decrypted information.
 
-    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, &apPrivKey);
     rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
     {
@@ -319,12 +321,13 @@ int validate_components() {
         }
         print_debug("320\n");
         // Get the component validation message
-        RsaKey * key = COMPUBLIC; // the component public key
+        RsaKey  compPubKey; // the component public key
+        comPubKey= setPubRSAKey(COMPUBLIC);
         byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
         byte out; // Pointer to a pointer for decrypted information.
         print_debug("before verifyInLine\n");
         // Confirm the message with component public key
-        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0) {
+        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &comPubKey) < 0) {
             print_debug("error_return\n");
             return ERROR_RETURN;
         }
@@ -342,11 +345,12 @@ int boot_components() {
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
     // unsigned char inByte[sizeof(apvertMessage)] = apvertMessage;
     int ret;
-    RsaKey* key = APPRIVATE;
+    RsaKey apPrivKey; // the AP Private key
+    apPrivKey=setPrivRSAKey(APPRIVATE);
     RNG rng;
     ret = wc_InitRng(&rng);
     // unsigned char outByte2[MAX_I2C_MESSAGE_LEN - 1];
-    ret = wc_RsaSSL_Sign(inByte2, sizeof(inByte2),outByte2, sizeof(outByte2),key,&rng);
+    ret = wc_RsaSSL_Sign(inByte2, sizeof(inByte2),outByte2, sizeof(outByte2),&apPrivKey,&rng);
 
 
     // Send boot command to each component

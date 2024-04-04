@@ -104,4 +104,49 @@ int hash(void *data, size_t len, uint8_t *hash_out) {
     return wc_Md5Hash((uint8_t *)data, len, hash_out);
 }
 
+//Function converts a Public Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPubRSAKey (char* pemPubKey)
+{
+    int pemSz=sizeof(pemPubKey);
+    char saveBuff[];
+    int saveBuffSz=0;
+   saveBuffSz=wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz);
+
+    RsaKey pub;
+    word32 idx = 0;
+    int ret = 0;
+  
+ 
+    wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing public key
+    }
+
+    return pub
+
+}
+
+//Function converts a Private Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPrivRSAKey (char* privPubKey)
+{
+    int pemSz=sizeof(privPubKey);
+    char saveBuff [];
+    int saveBuffSz=0;
+
+    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff*,saveBuffSz,RSA_TYPE);
+
+    RsaKey priv;
+    word32 idx = 0;
+    int ret = 0;
+   
+ 
+    wc_InitRsaKey(&priv, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPrivateKeyDecode(saveBuff, &idx, &priv, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing private key
+    }
+    return priv;
+}
+
 #endif

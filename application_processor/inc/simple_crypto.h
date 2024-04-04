@@ -66,6 +66,8 @@ int decrypt_sym(uint8_t *ciphertext, size_t len, uint8_t *key, uint8_t *plaintex
  * @return 0 on success, non-zero for other error
  */
 int hash(void *data, size_t len, uint8_t *hash_out);
+RsaKey setPubRSAKey (char* pemPubKey);
+RsaKey setPrivRSAKey (char* privPubKey);
 
 #endif // CRYPTO_EXAMPLE
 #endif // ECTF_CRYPTO_H

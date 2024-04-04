@@ -24,6 +24,7 @@
 #include "simple_i2c_peripheral.h"
 #include "board_link.h"
 
+
 // Includes from containerized build
 #include "ectf_params.h"
 #include "com_secrets.h"
@@ -99,7 +100,8 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
 */
 void secure_send(uint8_t len, uint8_t* buffer) {
     // Get the component validation message
-	RsaKey * key = APPUBLIC; // the AP public key
+	RsaKey * apPubKey; // the AP public key
+    apPubKey=setPubRSAKey(APPUBLIC);
 	RNG * rng;
     int rngReturn = wc_InitRng(rng);
     if(rngReturn < 0)
@@ -108,7 +110,7 @@ void secure_send(uint8_t len, uint8_t* buffer) {
     }
     byte* out; // Pointer to a pointer for decrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, key, rng)
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, apPubKey, rng)
 
     rngReturn = wc_FreeRng(rng)
     if(rngReturn < 0)
@@ -134,7 +136,8 @@ void secure_send(uint8_t len, uint8_t* buffer) {
 */
 int secure_receive(uint8_t* buffer) {
     int len = wait_and_receive_packet(buffer);  // Recieve encrypted packet and store the returned length of the packet.
-    RsaKey * key = COMPRIVATE; // the component Private key
+    RsaKey comPrivKey; // the Component Private Key
+    comPrivKey=setPrivRSAKey(COMPRIVATE);
 	RNG * rng;
     int rngReturn = wc_InitRng(rng);
     if(rngReturn < 0)
@@ -143,7 +146,7 @@ int secure_receive(uint8_t* buffer) {
     }	
     byte* out; // Pointer to a pointer for decrypted information.
 
-    ret = wc_RsaPrivateDecryptInline(buffer, len, out, key);
+    ret = wc_RsaPrivateDecryptInline(buffer, len, out, comPrivKey);
     
     rngReturn = wc_FreeRng(rng)
     if(rngReturn < 0)
@@ -155,6 +158,50 @@ int secure_receive(uint8_t* buffer) {
         return ERROR_RETURN;
     }
     return ret; // number of bytes recieved 
+}
+//Function converts a Public Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPubRSAKey (char* pemPubKey)
+{
+    int pemSz=sizeof(pemPubKey);
+    char saveBuff[];
+    int saveBuffSz=0;
+   saveBuffSz=wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz);
+
+    RsaKey pub;
+    word32 idx = 0;
+    int ret = 0;
+  
+ 
+    wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing public key
+    }
+
+    return pub
+
+}
+
+//Function converts a Private Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPrivRSAKey (char* privPubKey)
+{
+    int pemSz=sizeof(privPubKey);
+    char saveBuff [];
+    int saveBuffSz=0;
+
+    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff*,saveBuffSz,RSA_TYPE);
+
+    RsaKey priv;
+    word32 idx = 0;
+    int ret = 0;
+   
+ 
+    wc_InitRsaKey(&priv, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPrivateKeyDecode(saveBuff, &idx, &priv, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing private key
+    }
+    return priv;
 }
 
 /******************************* FUNCTION DEFINITIONS *********************************/
@@ -218,11 +265,12 @@ void component_process_cmd() {
 int process_boot(command_message* command) {
     // The AP requested a boot. Set component_boot for the main loop and
     // respond with the boot message
-    RsaKey *key = COMPUBLIC;               // the component public key
+    RsaKey * apPubKey; // the AP public key
+    apPubKey=setPubRSAKey(APPUBLIC);
     byte in[] = command->params; // Byte array to be decrypted.
     byte out; // Pointer to a pointer for decrypted information.
     // Confirm the message with component public key
-    if (wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &key) < 0)
+    if (wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &apPubKey) < 0)
         return ERROR_RETURN;
     else {
 
@@ -242,18 +290,20 @@ void process_scan() {
     secure_send(sizeof(scan_message), transmit_buffer);
 }
 
+
 void process_validate() {
     // The AP requested a validation. Respond with the Component ID
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
     byte inByte[sizeof(apvertMessage)] = apvertMessage;
     int ret;
-    RsaKey key = COMPRIVATE;
+    RsaKey comPrivKey; // the Component Private Key
+    comPrivKey=setPrivRSAKey(COMPRIVATE);
     RNG rng;
     ret = wc_InitRNG(&rng);
     byte outByte[MAX_I2C_MESSAGE_LEN - 1];
     //Sign with the CVERTMESSAGE  with the COM private key here:
-    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),key,rng);
+    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,rng);
     byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
     ret = wc_FreeRNG(&rng);
     // create a packet with component id and encrypted message
