@@ -66,6 +66,19 @@
 #define ERROR_RETURN -1
 #define apvertMessage "bpJjJW1XxqtCBuyE5QH3ChGdphQ5opSlBKwj3Om6Y8dfpwzkGTiPZmzV+DBHui6A8cbSA8LBNASfS4gn8ORtb4Izm2T037Adsjh/2kfWQBS0iM6YqbkIRYszhFPG4SocfmTOoZW9kARPYmsicTc6diT/ST9Tpwx1DGIK9jGEMCc="
 
+
+/*****************security******************************/
+// global
+
+
+// Hash PIN 
+uint8_t hash_outpin[HASH_SIZE]; //variable to store hashed pin value
+
+// Hash token 
+uint8_t hash_token[HASH_SIZE]; //variable to store hashed token value
+
+
+
 /******************************** TYPE DEFINITIONS ********************************/
 // Data structure for sending commands to component
 // Params allows for up to MAX_I2C_MESSAGE_LEN - 1 bytes to be send
@@ -210,6 +223,21 @@ int get_provisioned_ids(uint32_t* buffer) {
 // Initialize the device
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
+    
+    // Hash PIN 
+    char data[]= AP_PIN; //create character array out of plaintext pin data
+    hash((uint8_t*)(&data), strlen(data), hash_outpin);  
+    //hash_outpin-A pointer to a buffer of length HASH_SIZE (16 bytes) 
+    //where the resulting hash output will be written to
+
+
+    // Hash token 
+    char data2[]= AP_TOKEN; //create character array out of plaintext token data
+    hash((uint8_t*)(&data2), strlen(data2), hash_token);
+    
+
+
+
 
     // Enable global interrupts    
     __enable_irq();
@@ -467,7 +495,22 @@ void boot() {
 int validate_pin() {
     char buf[50];
     recv_input("Enter pin: ", buf);
-    if (!strcmp(buf, AP_PIN)) {
+    char* pinEntered = buf;
+    
+    uint8_t hash_outpin[HASH_SIZE];
+    // char* data= AP_PIN;
+    hash((uint8_t*) AP_PIN, strlen(AP_PIN), hash_outpin);
+
+    // Hash example encryption results 
+    uint8_t comphash_outpin[HASH_SIZE];
+    hash((uint8_t*) pinEntered,strlen(pinEntered), comphash_outpin);
+    // print_debug("hashes: first...");
+    // print_hex_info(comphash_outpin, HASH_SIZE);
+    // print_debug("second...");
+    // print_hex_info(hash_outpin, HASH_SIZE); // may need to deref here
+
+    //if (!strcmp(buf, AP_PIN)) {
+    if (memcmp(comphash_outpin, hash_outpin, HASH_SIZE ) == 0) { //compare buffers of hashed values
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -479,7 +522,17 @@ int validate_pin() {
 int validate_token() {
     char buf[50];
     recv_input("Enter token: ", buf);
-    if (!strcmp(buf, AP_TOKEN)) {
+
+    char* tokenEntered = buf; 
+    // Hash entered pin and compare 
+    uint8_t comphash_token[HASH_SIZE];
+    hash((uint8_t*)tokenEntered ,strlen(tokenEntered), comphash_token);
+
+    uint8_t hash_token[HASH_SIZE];
+    hash((uint8_t*) AP_TOKEN, strlen(AP_TOKEN), hash_token);
+
+    //if (!strcmp(buf, AP_TOKEN))
+    if (memcmp(comphash_token, hash_token, HASH_SIZE ) == 0) {
         print_debug("Token Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -499,14 +552,7 @@ void attempt_boot() {
         print_error("Failed to boot all components\n");
         return;
     }
-														// Reference design flag
-														// Remove this in your design
-														/* char flag[37];
-														for (int i = 0; aseiFuengleR[i]; i++) {
-															flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
-															flag[i+1] = 0;
-														}
-														print_debug("%s\n", flag); */
+  
     // Print boot message
     // This always needs to be printed when booting
     print_info("AP>%s\n", AP_BOOT_MSG);
@@ -525,7 +571,7 @@ void attempt_replace() {
 
     uint32_t component_id_in = 0;
     uint32_t component_id_out = 0;
-
+    
     recv_input("Component ID In: ", buf);
     sscanf(buf, "%x", &component_id_in);
     recv_input("Component ID Out: ", buf);
