@@ -21,7 +21,8 @@
 /******************************** MACRO DEFINITIONS ********************************/
 #define BLOCK_SIZE AES_BLOCK_SIZE
 #define KEY_SIZE 16
-#define HASH_SIZE WC_SHA224_DIGEST_SIZE
+#define HASH_SIZE 224
+//#define HASH_SIZE WC_SHA224_DIGEST_SIZE
 
 /******************************** FUNCTION PROTOTYPES ********************************/
 /** @brief Encrypts plaintext using a symmetric cipher
