@@ -120,9 +120,9 @@ void secure_send(uint8_t len, uint8_t* buffer) {
     }
     byte* out; // Pointer to a pointer for decrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, apPubKey, rng)
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, apPubKey, rng);
 
-    rngReturn = wc_FreeRng(rng)
+    rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
     {
         return ERROR_RETURN;
@@ -158,7 +158,7 @@ int secure_receive(uint8_t* buffer) {
 
     ret = wc_RsaPrivateDecryptInline(buffer, len, out, comPrivKey);
     
-    rngReturn = wc_FreeRng(rng)
+    rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
     {
         return ERROR_RETURN;
@@ -188,7 +188,7 @@ RsaKey setPubRSAKey (char* pemPubKey)
         // error parsing public key
     }
 
-    return pub
+    return pub;
 
 }
 
