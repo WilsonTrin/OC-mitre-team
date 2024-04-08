@@ -26,6 +26,8 @@
 #include "wolfssl/wolfcrypt/random.h"
 #include "wolfssl/mcapi/crypto.h"
 #include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/rsa.h"
+
 // Todo:
     // move WolfSSL into component's directory.
     // finish bugs here
@@ -131,7 +133,7 @@ void secure_send(uint8_t len, uint8_t* buffer) {
     {
         return ERROR_RETURN;
     }
-    send_packet_and_ack(outlen, out);   // Send the packet
+    send_packet_and_ack(outLen, out);   // Send the packet
 }
 
 /**
@@ -156,7 +158,7 @@ int secure_receive(uint8_t* buffer) {
     }	
     byte* out; // Pointer to a pointer for decrypted information.
 
-    ret = wc_RsaPrivateDecryptInline(buffer, len, out, comPrivKey);
+    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, comPrivKey);
     
     rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
