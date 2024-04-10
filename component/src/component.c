@@ -278,7 +278,7 @@ void component_process_cmd() {
 int process_boot(command_message* command) {
     // The AP requested a boot. Set component_boot for the main loop and
     // respond with the boot message
-    RsaKey * apPubKey; // the AP public key
+    RsaKey  apPubKey; // the AP public key
     apPubKey=setPubRSAKey(APPUBLIC);
     byte in[] = {command->params}; // Byte array to be decrypted.
     byte out; // Pointer to a pointer for decrypted information.
