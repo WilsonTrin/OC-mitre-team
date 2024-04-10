@@ -27,6 +27,7 @@
 #include "wolfssl/mcapi/crypto.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/rsa.h"
+#include "wolfssl/wolfcrypt/asn.h"
 
 // Todo:
     // move WolfSSL into component's directory.
