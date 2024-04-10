@@ -315,12 +315,12 @@ void process_validate() {
     RsaKey comPrivKey; // the Component Private Key
     comPrivKey=setPrivRSAKey(COMPRIVATE);
     RNG rng;
-    ret = wc_InitRNG(&rng);
+    ret = wc_InitRng(&rng);
     
     //Sign with the CVERTMESSAGE  with the COM private key here:
     ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,&rng);
     // byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
-    ret = wc_FreeRNG(&rng);
+    ret = wc_FreeRng(&rng);
     // create a packet with component id and encrypted message
     validate_message* packet1 = (validate_message*) transmit_buffer;
     packet1->component_id = COMPONENT_ID;
