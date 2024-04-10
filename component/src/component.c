@@ -112,7 +112,7 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
 */
 void secure_send(uint8_t len, uint8_t* buffer) {
     // Get the component validation message
-	RsaKey * apPubKey; // the AP public key
+	RsaKey  apPubKey; // the AP public key
     apPubKey=setPubRSAKey(APPUBLIC);
 	RNG * rng;
     int rngReturn = wc_InitRng(rng);
@@ -122,7 +122,7 @@ void secure_send(uint8_t len, uint8_t* buffer) {
     }
     byte* out; // Pointer to a pointer for decrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, apPubKey, rng);
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &apPubKey, rng);
 
     rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
@@ -158,7 +158,7 @@ int secure_receive(uint8_t* buffer) {
     }	
     byte* out; // Pointer to a pointer for decrypted information.
 
-    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, comPrivKey);
+    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, &comPrivKey);
     
     rngReturn = wc_FreeRng(rng);
     if(rngReturn < 0)
@@ -201,7 +201,7 @@ RsaKey setPrivRSAKey (char* privPubKey)
     char* saveBuff ;
     int saveBuffSz=0;
 
-    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff*,saveBuffSz,RSA_TYPE);
+    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff,saveBuffSz,RSA_TYPE); //is this being used in ap?
 
     RsaKey priv;
     word32 idx = 0;
