@@ -279,7 +279,7 @@ int process_boot(command_message* command) {
     // respond with the boot message
     RsaKey * apPubKey; // the AP public key
     apPubKey=setPubRSAKey(APPUBLIC);
-    byte in[] = command->params; // Byte array to be decrypted.
+    byte in[] = {command->params}; // Byte array to be decrypted.
     byte out; // Pointer to a pointer for decrypted information.
     // Confirm the message with component public key
     if (wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &apPubKey) < 0)
@@ -316,7 +316,7 @@ void process_validate() {
     ret = wc_InitRNG(&rng);
     
     //Sign with the CVERTMESSAGE  with the COM private key here:
-    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,rng);
+    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,&rng);
     // byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
     ret = wc_FreeRNG(&rng);
     // create a packet with component id and encrypted message
