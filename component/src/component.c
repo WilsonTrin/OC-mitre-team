@@ -94,6 +94,7 @@ int process_boot(command_message* command);
 void process_scan(void);
 void process_validate(void);
 void process_attest(void);
+RsaKey setPubRSAKey (char* pemPubKey);
 
 /********************************* GLOBAL VARIABLES **********************************/
 // Global varaibles
@@ -257,7 +258,7 @@ void component_process_cmd() {
     // Output to application processor dependent on command received
     switch (command->opcode) {
     case COMPONENT_CMD_BOOT:
-        process_boot();
+        process_boot(command);
         break;
     case COMPONENT_CMD_SCAN:
         process_scan();
