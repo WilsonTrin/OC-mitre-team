@@ -90,7 +90,7 @@ typedef struct {
 /********************************* FUNCTION DECLARATIONS **********************************/
 // Core function definitions
 void component_process_cmd(void);
-void process_boot(void);
+int process_boot(command_message* command);
 void process_scan(void);
 void process_validate(void);
 void process_attest(void);
