@@ -202,7 +202,7 @@ RsaKey setPrivRSAKey (char* privPubKey)
     char* saveBuff ;
     int saveBuffSz=0;
 
-    saveBuffSz=wc_CertPEMToDer(privPubKey,pemSz,saveBuff,saveBuffSz,RSA_TYPE); //is this being used in ap?
+    saveBuffSz=wolfSSL_CertPemToDer(privPubKey,pemSz,*saveBuff,saveBuffSz,RSA_TYPE); //is this being used in ap?
 
     RsaKey priv;
     word32 idx = 0;
