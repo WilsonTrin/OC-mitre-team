@@ -95,7 +95,7 @@ void process_scan(void);
 void process_validate(void);
 void process_attest(void);
 RsaKey setPubRSAKey (char* pemPubKey);
-
+RsaKey setPrivRSAKey (char* privPubKey);
 /********************************* GLOBAL VARIABLES **********************************/
 // Global varaibles
 uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
