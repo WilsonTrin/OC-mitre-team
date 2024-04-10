@@ -178,7 +178,7 @@ RsaKey setPubRSAKey (char* pemPubKey)
     int pemSz=sizeof(pemPubKey);
     char* saveBuff;
     int saveBuffSz=0;
-   saveBuffSz=wc_PemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz);
+    saveBuffSz=wc_PemToDer(pemPubKey, pemSz, 12/*PUBLICKEY_TYPE*/, *saveBuff, NULL, NULL, NULL);
 
     RsaKey pub;
     word32 idx = 0;
