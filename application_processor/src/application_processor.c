@@ -143,17 +143,17 @@ int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
 	// Get the component validation message
 	RsaKey  comPubKey; // the component public key
     comPubKey= setPubRSAKey(COMPUBLIC);
-    RNG * rng;
-    int rngReturn = wc_InitRng(rng);
+    RNG  rng;
+    int rngReturn = wc_InitRng(&rng);
     if(rngReturn < 0)
     {
         return ERROR_RETURN;
     }
 	byte* out; // Pointer to a pointer for encrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, rng);
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, &rng);
 
-    rngReturn = wc_FreeRng(rng);
+    rngReturn = wc_FreeRng(&rng);
     if(rngReturn < 0)
     {
         return ERROR_RETURN;
@@ -224,6 +224,7 @@ int get_provisioned_ids(uint32_t* buffer) {
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
     
+    wolfSSL_Init(); //this function is needed to enable all wolfSSL functions??
     // Hash PIN 
     char data[]= AP_PIN; //create character array out of plaintext pin data
     hash((uint8_t*)(&data), strlen(data), hash_outpin);  
