@@ -139,10 +139,12 @@ flash_entry flash_status;
  * This function must be implemented by your team to align with the security requirements.
 
 */
-int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
+int secure_send(uint8_t address, word32 len, byte * buffer) {
 	// Get the component validation message
 	RsaKey  comPubKey; // the component public key
     comPubKey= setPubRSAKey(COMPUBLIC);
+    // RsaKey * pubKeyptr;
+    // pubKeyPtr = &comPubKey;
     print_debug("146");
     WC_RNG* rng;
     print_debug("148");
@@ -168,9 +170,14 @@ int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
     // print_debug("here we go");
     // print_debug(outKey);
 
-	byte* out; // Pointer to a pointer for encrypted information.
-    word32 outLen = 0;
+	byte* out[1000]; // Pointer to a pointer for encrypted information.
+    word32 outLen = 1000;
+    print_debug("%i", wc_RsaEncryptSize(&comPubKey));
+    // print_hex_debug(buffer, len);
     int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, rng);
+    // in == NULL || inLen == 0 || out == NULL || key == NULL
+    // int wc_RsaPublicEncrypt(const byte* in, word32 inLen, byte* out, word32 outLen,
+    //                                                 RsaKey* key, WC_RNG* rng)
     // rngReturn = wc_FreeRng(&rng);
     // if(rngReturn < 0)
     // {

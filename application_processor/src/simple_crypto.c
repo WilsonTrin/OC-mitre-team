@@ -126,6 +126,7 @@ RsaKey setPubRSAKey (char* pemPubKey)
     word32 * pointer = &size;
     print_debug("%i", *pointer);
     print_hex_debug(pemPubKey, strlen(pemPubKey));
+    
     Base64_Decode(pemPubKey, strlen(pemPubKey), outKey, pointer);
     // print_debug("%i", Base64_Decode("aGV5IG15IG5hbWUgaXMgbGFuY2U=", strlen("aGV5IG15IG5hbWUgaXMgbGFuY2U="), outKey, pointer));
     print_debug("here we go");
@@ -153,11 +154,31 @@ RsaKey setPubRSAKey (char* pemPubKey)
     int ret = 0;
   
  
-    wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
-    ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
+    int rsaresult = wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    if (rsaresult<0)
+    {
+        print_debug("error init rsa key %i",rsaresult);
+    }
+
+    // WC_RNG* rng;
+    // print_debug("148");
+    // //Arc4 * arc;
+    // OS_Seed * seed;
+    // print_debug("151");
+    // seed->fd=4;
+    // print_debug("153");
+    // rng-> seed=*seed;
+    // print_debug("155");
+    // rng->heap=NULL;
+    // wc_MakeRsaKey(&pub, 1024, 65537, rng);
+    // byte * output[2000];
+    // wc_RsaKeyToPublicDer(pub, output, 1024);
+
+    ret = wc_RsaPublicKeyDecode((byte *) saveBuff, &idx, &pub, saveBuffSz);
     if( ret != 0 ) {
         print_debug("error generating key %i",ret);
     }
+    print_debug("current pub key size%i", wc_RsaEncryptSize(&pub));
 
     return pub;
 
