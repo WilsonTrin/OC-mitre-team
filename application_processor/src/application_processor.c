@@ -143,25 +143,47 @@ int secure_send(uint8_t address, uint8_t len, uint8_t* buffer) {
 	// Get the component validation message
 	RsaKey  comPubKey; // the component public key
     comPubKey= setPubRSAKey(COMPUBLIC);
-    RNG  rng;
-    int rngReturn = wc_InitRng(&rng);
-    if(rngReturn < 0)
-    {
-        return ERROR_RETURN;
-    }
+    print_debug("146");
+    WC_RNG* rng;
+    print_debug("148");
+    //Arc4 * arc;
+    OS_Seed * seed;
+    print_debug("151");
+    seed->fd=4;
+    print_debug("153");
+    rng-> seed=*seed;
+    print_debug("155");
+    rng->heap=NULL;
+    
+    print_debug("149");
+    // if(rngReturn < 0)
+    // {
+    //     print_debug("rngReturn < 0; Error");
+    //     return ERROR_RETURN;
+    // }
+
+    // byte outKey[1000];
+    // word32 size = 1000;
+    // Base64_Decode(APPRIVATE, 3280, *outKey, size);
+    // print_debug("here we go");
+    // print_debug(outKey);
+
 	byte* out; // Pointer to a pointer for encrypted information.
     word32 outLen = 0;
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, &rng);
-
-    rngReturn = wc_FreeRng(&rng);
-    if(rngReturn < 0)
-    {
-        return ERROR_RETURN;
-    }
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, rng);
+    // rngReturn = wc_FreeRng(&rng);
+    // if(rngReturn < 0)
+    // {
+    //     return ERROR_RETURN;
+    // }
     if(result < 0)
     {
+        print_debug("encrypt error %i",result);
+        
         return ERROR_RETURN;
+        
     }
+    
     return send_packet(address, outLen, out);
 }
 
@@ -180,11 +202,19 @@ int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     int len = poll_and_receive_packet(address, buffer);
 
     RsaKey apPrivKey; // the AP Private key
-    apPrivKey=setPrivRSAKey(APPRIVATE);
+    
+    byte outKey[1000];
+    word32 size = 1000;
+    Base64_Decode(APPRIVATE, 3280, *outKey, size);
+    print_debug("here we go");
+    print_debug(outKey);
+    apPrivKey=setPrivRSAKey(outKey);
 	RNG * rng;
     int rngReturn = wc_InitRng(rng);
+    print_debug(rngReturn);
     if(rngReturn < 0)
     {
+        print_debug("Error line 190");
         return ERROR_RETURN;
     }
     byte* out; // Pointer to a pointer for decrypted information.
@@ -202,7 +232,7 @@ int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     return ret; // number of bytes recieved 
 }
 
-/**
+/*
  * @brief Get Provisioned IDs
  * 
  * @param uint32_t* buffer
@@ -225,9 +255,12 @@ int get_provisioned_ids(uint32_t* buffer) {
 void init() {
     
     #ifdef WC_RNG_SEED_CB
+    print_debug("ifdef was true");
     wc_SetSeed_Cb(wc_GenerateSeed);
     #endif
     //wolfSSL_Init(); //this function is needed to enable all wolfSSL functions??
+    wolfCrypt_Init();
+    
     // Hash PIN 
     char data[]= AP_PIN; //create character array out of plaintext pin data
     hash((uint8_t*)(&data), strlen(data), hash_outpin);  
@@ -272,11 +305,13 @@ void init() {
 // Send a command to a component and receive the result
 int issue_cmd(i2c_addr_t addr, uint8_t* transmit, uint8_t* receive) {
     // Send message
+    print_debug("made it to line 281");
     int result = secure_send(addr, sizeof(uint8_t), transmit);
     if (result == ERROR_RETURN) {
+        print_debug("error return 284");
         return ERROR_RETURN;
     }
-    
+    print_debug("made it to line 286");
     // Receive message
     int len = secure_receive(addr, receive);
     if (len == ERROR_RETURN) {
