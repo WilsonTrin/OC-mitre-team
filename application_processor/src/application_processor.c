@@ -29,7 +29,7 @@
 #include "host_messaging.h"
 #ifdef CRYPTO_EXAMPLE
 #include "simple_crypto.h"
-#include "wolfssl/ssl.h"
+#include "wolfssl/wolfssl/ssl.h"
 #endif
 
 #ifdef POST_BOOT
