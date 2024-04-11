@@ -29,7 +29,7 @@
 #include "host_messaging.h"
 #ifdef CRYPTO_EXAMPLE
 #include "simple_crypto.h"
-#include "wolfssl/wolfssl/ssl.h"
+#include "wolfssl/ssl.h"
 #endif
 
 #ifdef POST_BOOT
@@ -224,7 +224,10 @@ int get_provisioned_ids(uint32_t* buffer) {
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
     
-    wolfSSL_Init(); //this function is needed to enable all wolfSSL functions??
+    #ifdef WC_RNG_SEED_CB
+    wc_SetSeed_Cb(wc_GenerateSeed);
+    #endif
+    //wolfSSL_Init(); //this function is needed to enable all wolfSSL functions??
     // Hash PIN 
     char data[]= AP_PIN; //create character array out of plaintext pin data
     hash((uint8_t*)(&data), strlen(data), hash_outpin);  
