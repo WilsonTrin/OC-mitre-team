@@ -174,23 +174,104 @@ int secure_receive(uint8_t* buffer) {
     return ret; // number of bytes recieved 
 }
 //Function converts a Public Key in PEM format to a WolfSSL RsaKey struct
+// RsaKey setPubRSAKey (char* pemPubKey)
+// {
+
+//     byte outKey[1000];
+//     word32 size = 1000;
+//     Base64_Decode(pemPubKey, sizeof(pemPubKey), *outKey, size);
+//     print_debug("here we go");
+//     print_debug(outKey);
+
+//     int pemSz=sizeof(outKey);
+//     char* saveBuff;
+//     int saveBuffSz=0;
+//     saveBuffSz=wc_PemToDer(outKey, pemSz, 12/*PUBLICKEY_TYPE*/, saveBuff, NULL, NULL, NULL);
+
+//     RsaKey pub;
+//     word32 idx = 0;
+//     int ret = 0;
+  
+ 
+//     wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+//     ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
+//     if( ret != 0 ) {
+//         // error parsing public key
+//     }
+
+//     return pub;
+
+// }
+
+// replacing with code from ap's crypto
+
 RsaKey setPubRSAKey (char* pemPubKey)
 {
-    int pemSz=sizeof(pemPubKey);
-    char* saveBuff;
-    int saveBuffSz=0;
-    saveBuffSz=wc_PemToDer(pemPubKey, pemSz, 12/*PUBLICKEY_TYPE*/, *saveBuff, NULL, NULL, NULL);
+    byte * outKey[1000];
+    word32 size = 1000;
+    word32 * pointer = &size;
+    print_debug("%i", *pointer);
+    print_hex_debug(pemPubKey, strlen(pemPubKey));
+    
+    Base64_Decode(pemPubKey, strlen(pemPubKey), outKey, pointer);
+    // print_debug("%i", Base64_Decode("aGV5IG15IG5hbWUgaXMgbGFuY2U=", strlen("aGV5IG15IG5hbWUgaXMgbGFuY2U="), outKey, pointer));
+    print_debug("here we go");
+    print_debug("%i", *pointer);
+    print_hex_debug(outKey, *pointer);
+    unsigned char * result[*pointer];
+
+    memcpy(result, outKey, *pointer);
+
+
+    int pemSz=sizeof(result);
+    print_debug("%i", pemSz);
+    //print_debug(*result);
+     //int pemSz=sizeof(pemPubKey);
+
+    DerBuffer* saveBuff;
+    word32 saveBuffSz=0; 
+   
+    saveBuffSz=wc_PemToDer(result, pemSz, 12/* was 12 PUBLICKEY_TYPE*/, &saveBuff, NULL, NULL, NULL); //wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz); // here?
+    if (saveBuffSz<0)
+    {
+        print_debug("error pem to der %i",saveBuffSz);
+    }
+
+    print_debug("%i", saveBuffSz);
 
     RsaKey pub;
     word32 idx = 0;
     int ret = 0;
-  
+    
  
-    wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
-    ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
-    if( ret != 0 ) {
-        // error parsing public key
+    int rsaresult = wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    if (rsaresult<0)
+    {
+        print_debug("error init rsa key %i",rsaresult);
     }
+    print_debug("savebuff length %i",saveBuff->length);
+
+    // WC_RNG* rng;
+    // print_debug("148");
+    // //Arc4 * arc;
+    // OS_Seed * seed;
+    // print_debug("151");
+    // seed->fd=4;
+    // print_debug("153");
+    // rng-> seed=*seed;
+    // print_debug("155");
+    // rng->heap=NULL;
+    // wc_MakeRsaKey(&pub, 1024, 65537, rng);
+    // byte * output[2000];
+    // wc_RsaKeyToPublicDer(pub, output, 1024);
+
+    ret = wc_RsaPublicKeyDecode(saveBuff->buffer, &idx, &pub, saveBuff->length);
+    if( ret != 0 ) {
+        print_debug("error generating key %i",ret);
+        print_debug("%i", sizeof(*saveBuff));
+        print_hex_debug(saveBuff->buffer, saveBuff->length);
+    }
+    print_debug("current pub key size%i", wc_RsaEncryptSize(&pub));
 
     return pub;
 

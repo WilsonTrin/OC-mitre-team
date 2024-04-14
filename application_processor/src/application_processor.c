@@ -146,18 +146,23 @@ int secure_send(uint8_t address, word32 len, byte * buffer) {
     // RsaKey * pubKeyptr;
     // pubKeyPtr = &comPubKey;
     print_debug("146");
-    WC_RNG* rng;
+    WC_RNG rng;
+    print_debug("%i", wc_InitRng(&rng));
     print_debug("148");
     //Arc4 * arc;
-    OS_Seed * seed;
-    print_debug("151");
-    seed->fd=4;
-    print_debug("153");
-    rng-> seed=*seed;
-    print_debug("155");
-    rng->heap=NULL;
-    
-    print_debug("149");
+
+
+    // OS_Seed seed;
+    // print_debug("151");
+    // seed.fd=4;
+    // print_debug("153");
+    // rng.seed=seed;
+    // print_debug("155");
+    // rng.heap=NULL;
+    // WC_RNG * rngptr = &rng;
+    // print_debug("149");
+
+
     // if(rngReturn < 0)
     // {
     //     print_debug("rngReturn < 0; Error");
@@ -173,8 +178,14 @@ int secure_send(uint8_t address, word32 len, byte * buffer) {
 	byte* out[1000]; // Pointer to a pointer for encrypted information.
     word32 outLen = 1000;
     print_debug("%i", wc_RsaEncryptSize(&comPubKey));
-    // print_hex_debug(buffer, len);
-    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &comPubKey, rng);
+    print_debug("len: %i", len);
+    print_debug("outlen: %i", outLen);
+    print_hex_debug(out, outLen);
+    print_hex_debug(buffer, len);
+    if (&rng == NULL) {
+        print_debug("huh?!");
+    }
+    int result = wc_RsaPublicEncrypt(buffer, sizeof(buffer), out, sizeof(out), &comPubKey, &rng);
     // in == NULL || inLen == 0 || out == NULL || key == NULL
     // int wc_RsaPublicEncrypt(const byte* in, word32 inLen, byte* out, word32 outLen,
     //                                                 RsaKey* key, WC_RNG* rng)
@@ -207,11 +218,12 @@ int secure_send(uint8_t address, word32 len, byte * buffer) {
 */
 int secure_receive(i2c_addr_t address, uint8_t* buffer) {
     int len = poll_and_receive_packet(address, buffer);
-
+    print_debug("secure_receive happened 221");
     RsaKey apPrivKey; // the AP Private key
     
     byte outKey[1000];
     word32 size = 1000;
+    print_debug("secure_receive happened 226");
     Base64_Decode(APPRIVATE, 3280, *outKey, size);
     print_debug("here we go");
     print_debug(outKey);
@@ -324,6 +336,7 @@ int issue_cmd(i2c_addr_t addr, uint8_t* transmit, uint8_t* receive) {
     if (len == ERROR_RETURN) {
         return ERROR_RETURN;
     }
+    print_debug("made it to line 338");
     return len;
 }
 

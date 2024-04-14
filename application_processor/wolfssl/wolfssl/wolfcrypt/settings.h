@@ -263,7 +263,9 @@
 /* #define WOLFSSL_MAXQ1065 */
 
 /* Uncomment next line if using MAXQ108x */
-/* #define WOLFSSL_MAXQ108X */
+// #define WOLFSSL_MAXQ108X
+
+#define NO_DEV_RANDOM
 
 
 #ifdef WOLFSSL_USER_SETTINGS
