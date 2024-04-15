@@ -1,5 +1,5 @@
-# eCTF Insecure Example
-This repository holds the insecure example design for an eCTF MISC system.
+# eCTF Design
+This repository holds the design for our eCTF MISC system.
 
 
 ## Layout
