@@ -60,6 +60,19 @@
 #define SUCCESS_RETURN 0
 #define ERROR_RETURN -1
 
+
+/*****************security******************************/
+// global
+
+
+// Hash PIN 
+uint8_t hash_outpin[HASH_SIZE]; //variable to store hashed pin value
+
+// Hash token 
+uint8_t hash_token[HASH_SIZE]; //variable to store hashed token value
+
+
+
 /******************************** TYPE DEFINITIONS ********************************/
 // Data structure for sending commands to component
 // Params allows for up to MAX_I2C_MESSAGE_LEN - 1 bytes to be send
@@ -105,7 +118,7 @@ flash_entry flash_status;
 // getting this running than to try to untangle this
 // NOTE: you're not allowed to do this in your code
 // Remove this in your design
-typedef uint32_t aErjfkdfru;const aErjfkdfru aseiFuengleR[]={0x1ffe4b6,0x3098ac,0x2f56101,0x11a38bb,0x485124,0x11644a7,0x3c74e8,0x3c74e8,0x2f56101,0x12614f7,0x1ffe4b6,0x11a38bb,0x1ffe4b6,0x12614f7,0x1ffe4b6,0x12220e3,0x3098ac,0x1ffe4b6,0x2ca498,0x11a38bb,0xe6d3b7,0x1ffe4b6,0x127bc,0x3098ac,0x11a38bb,0x1d073c6,0x51bd0,0x127bc,0x2e590b1,0x1cc7fb2,0x1d073c6,0xeac7cb,0x51bd0,0x2ba13d5,0x2b22bad,0x2179d2e,0};const aErjfkdfru djFIehjkklIH[]={0x138e798,0x2cdbb14,0x1f9f376,0x23bcfda,0x1d90544,0x1cad2d2,0x860e2c,0x860e2c,0x1f9f376,0x38ec6f2,0x138e798,0x23bcfda,0x138e798,0x38ec6f2,0x138e798,0x31dc9ea,0x2cdbb14,0x138e798,0x25cbe0c,0x23bcfda,0x199a72,0x138e798,0x11c82b4,0x2cdbb14,0x23bcfda,0x3225338,0x18d7fbc,0x11c82b4,0x35ff56,0x2b15630,0x3225338,0x8a977a,0x18d7fbc,0x29067fe,0x1ae6dee,0x4431c8,0};typedef int skerufjp;skerufjp siNfidpL(skerufjp verLKUDSfj){aErjfkdfru ubkerpYBd=12+1;skerufjp xUrenrkldxpxx=2253667944%0x432a1f32;aErjfkdfru UfejrlcpD=1361423303;verLKUDSfj=(verLKUDSfj+0x12345678)%60466176;while(xUrenrkldxpxx--!=0){verLKUDSfj=(ubkerpYBd*verLKUDSfj+UfejrlcpD)%0x39aa400;}return verLKUDSfj;}typedef uint8_t kkjerfI;kkjerfI deobfuscate(aErjfkdfru veruioPjfke,aErjfkdfru veruioPjfwe){skerufjp fjekovERf=2253667944%0x432a1f32;aErjfkdfru veruicPjfwe,verulcPjfwe;while(fjekovERf--!=0){veruioPjfwe=(veruioPjfwe-siNfidpL(veruioPjfke))%0x39aa400;veruioPjfke=(veruioPjfke-siNfidpL(veruioPjfwe))%60466176;}veruicPjfwe=(veruioPjfke+0x39aa400)%60466176;verulcPjfwe=(veruioPjfwe+60466176)%0x39aa400;return veruicPjfwe*60466176+verulcPjfwe-89;}
+// typedef uint32_t aErjfkdfru;const aErjfkdfru aseiFuengleR[]={0x1ffe4b6,0x3098ac,0x2f56101,0x11a38bb,0x485124,0x11644a7,0x3c74e8,0x3c74e8,0x2f56101,0x12614f7,0x1ffe4b6,0x11a38bb,0x1ffe4b6,0x12614f7,0x1ffe4b6,0x12220e3,0x3098ac,0x1ffe4b6,0x2ca498,0x11a38bb,0xe6d3b7,0x1ffe4b6,0x127bc,0x3098ac,0x11a38bb,0x1d073c6,0x51bd0,0x127bc,0x2e590b1,0x1cc7fb2,0x1d073c6,0xeac7cb,0x51bd0,0x2ba13d5,0x2b22bad,0x2179d2e,0};const aErjfkdfru djFIehjkklIH[]={0x138e798,0x2cdbb14,0x1f9f376,0x23bcfda,0x1d90544,0x1cad2d2,0x860e2c,0x860e2c,0x1f9f376,0x38ec6f2,0x138e798,0x23bcfda,0x138e798,0x38ec6f2,0x138e798,0x31dc9ea,0x2cdbb14,0x138e798,0x25cbe0c,0x23bcfda,0x199a72,0x138e798,0x11c82b4,0x2cdbb14,0x23bcfda,0x3225338,0x18d7fbc,0x11c82b4,0x35ff56,0x2b15630,0x3225338,0x8a977a,0x18d7fbc,0x29067fe,0x1ae6dee,0x4431c8,0};typedef int skerufjp;skerufjp siNfidpL(skerufjp verLKUDSfj){aErjfkdfru ubkerpYBd=12+1;skerufjp xUrenrkldxpxx=2253667944%0x432a1f32;aErjfkdfru UfejrlcpD=1361423303;verLKUDSfj=(verLKUDSfj+0x12345678)%60466176;while(xUrenrkldxpxx--!=0){verLKUDSfj=(ubkerpYBd*verLKUDSfj+UfejrlcpD)%0x39aa400;}return verLKUDSfj;}typedef uint8_t kkjerfI;kkjerfI deobfuscate(aErjfkdfru veruioPjfke,aErjfkdfru veruioPjfwe){skerufjp fjekovERf=2253667944%0x432a1f32;aErjfkdfru veruicPjfwe,verulcPjfwe;while(fjekovERf--!=0){veruioPjfwe=(veruioPjfwe-siNfidpL(veruioPjfke))%0x39aa400;veruioPjfke=(veruioPjfke-siNfidpL(veruioPjfwe))%60466176;}veruicPjfwe=(veruioPjfke+0x39aa400)%60466176;verulcPjfwe=(veruioPjfwe+60466176)%0x39aa400;return veruicPjfwe*60466176+verulcPjfwe-89;}
 
 /******************************* POST BOOT FUNCTIONALITY *********************************/
 /**
@@ -159,6 +172,21 @@ int get_provisioned_ids(uint32_t* buffer) {
 // Initialize the device
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
+    
+    // Hash PIN 
+    char data[]= AP_PIN; //create character array out of plaintext pin data
+    hash((uint8_t*)(&data), strlen(data), hash_outpin);  
+    //hash_outpin-A pointer to a buffer of length HASH_SIZE (16 bytes) 
+    //where the resulting hash output will be written to
+
+
+    // Hash token 
+    char data2[]= AP_TOKEN; //create character array out of plaintext token data
+    hash((uint8_t*)(&data2), strlen(data2), hash_token);
+    
+
+
+
 
     // Enable global interrupts    
     __enable_irq();
@@ -386,7 +414,22 @@ void boot() {
 int validate_pin() {
     char buf[50];
     recv_input("Enter pin: ", buf);
-    if (!strcmp(buf, AP_PIN)) {
+    char* pinEntered = buf;
+    
+    uint8_t hash_outpin[HASH_SIZE];
+    // char* data= AP_PIN;
+    hash((uint8_t*) AP_PIN, strlen(AP_PIN), hash_outpin);
+
+    // Hash example encryption results 
+    uint8_t comphash_outpin[HASH_SIZE];
+    hash((uint8_t*) pinEntered,strlen(pinEntered), comphash_outpin);
+    // print_debug("hashes: first...");
+    // print_hex_info(comphash_outpin, HASH_SIZE);
+    // print_debug("second...");
+    // print_hex_info(hash_outpin, HASH_SIZE); // may need to deref here
+
+    //if (!strcmp(buf, AP_PIN)) {
+    if (memcmp(comphash_outpin, hash_outpin, HASH_SIZE ) == 0) { //compare buffers of hashed values
         print_debug("Pin Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -398,7 +441,17 @@ int validate_pin() {
 int validate_token() {
     char buf[50];
     recv_input("Enter token: ", buf);
-    if (!strcmp(buf, AP_TOKEN)) {
+
+    char* tokenEntered = buf; 
+    // Hash entered pin and compare 
+    uint8_t comphash_token[HASH_SIZE];
+    hash((uint8_t*)tokenEntered ,strlen(tokenEntered), comphash_token);
+
+    uint8_t hash_token[HASH_SIZE];
+    hash((uint8_t*) AP_TOKEN, strlen(AP_TOKEN), hash_token);
+
+    //if (!strcmp(buf, AP_TOKEN))
+    if (memcmp(comphash_token, hash_token, HASH_SIZE ) == 0) {
         print_debug("Token Accepted!\n");
         return SUCCESS_RETURN;
     }
@@ -417,14 +470,7 @@ void attempt_boot() {
         print_error("Failed to boot all components\n");
         return;
     }
-    // Reference design flag
-    // Remove this in your design
-    char flag[37];
-    for (int i = 0; aseiFuengleR[i]; i++) {
-        flag[i] = deobfuscate(aseiFuengleR[i], djFIehjkklIH[i]);
-        flag[i+1] = 0;
-    }
-    print_debug("%s\n", flag);
+  
     // Print boot message
     // This always needs to be printed when booting
     print_info("AP>%s\n", AP_BOOT_MSG);
@@ -443,7 +489,7 @@ void attempt_replace() {
 
     uint32_t component_id_in = 0;
     uint32_t component_id_out = 0;
-
+    
     recv_input("Component ID In: ", buf);
     sscanf(buf, "%x", &component_id_in);
     recv_input("Component ID Out: ", buf);
