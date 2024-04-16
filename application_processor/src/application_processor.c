@@ -29,6 +29,7 @@
 #include "host_messaging.h"
 #ifdef CRYPTO_EXAMPLE
 #include "simple_crypto.h"
+#include "wolfssl/ssl.h"
 #endif
 
 #ifdef POST_BOOT
@@ -38,7 +39,11 @@
 
 // Includes from containerized build
 #include "ectf_params.h"
-#include "global_secrets.h"
+#include "ap_secrets.h"
+// #include <rsa.h>
+#include "wolfssl/wolfcrypt/random.h"
+#include "wolfssl/mcapi/crypto.h"
+//#include "component.c"
 
 /********************************* CONSTANTS **********************************/
 
@@ -59,6 +64,7 @@
 // Library call return types
 #define SUCCESS_RETURN 0
 #define ERROR_RETURN -1
+#define apvertMessage "bpJjJW1XxqtCBuyE5QH3ChGdphQ5opSlBKwj3Om6Y8dfpwzkGTiPZmzV+DBHui6A8cbSA8LBNASfS4gn8ORtb4Izm2T037Adsjh/2kfWQBS0iM6YqbkIRYszhFPG4SocfmTOoZW9kARPYmsicTc6diT/ST9Tpwx1DGIK9jGEMCc="
 
 
 /*****************security******************************/
@@ -86,6 +92,7 @@ typedef struct {
 // Data type for receiving a validate message
 typedef struct {
     uint32_t component_id;
+    uint8_t cVertMessage[MAX_I2C_MESSAGE_LEN-4];
 } validate_message;
 
 // Data type for receiving a scan message
@@ -132,8 +139,70 @@ flash_entry flash_status;
  * This function must be implemented by your team to align with the security requirements.
 
 */
-int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
-    return send_packet(address, len, buffer);
+int secure_send(uint8_t address, word32 len, byte * buffer) {
+	// Get the component validation message
+	RsaKey  comPubKey; // the component public key
+    comPubKey= setPubRSAKey(COMPUBLIC);
+    // RsaKey * pubKeyptr;
+    // pubKeyPtr = &comPubKey;
+    print_debug("146");
+    WC_RNG rng;
+    print_debug("%i", wc_InitRng(&rng));
+    print_debug("148");
+    //Arc4 * arc;
+
+
+    // OS_Seed seed;
+    // print_debug("151");
+    // seed.fd=4;
+    // print_debug("153");
+    // rng.seed=seed;
+    // print_debug("155");
+    // rng.heap=NULL;
+    // WC_RNG * rngptr = &rng;
+    // print_debug("149");
+
+
+    // if(rngReturn < 0)
+    // {
+    //     print_debug("rngReturn < 0; Error");
+    //     return ERROR_RETURN;
+    // }
+
+    // byte outKey[1000];
+    // word32 size = 1000;
+    // Base64_Decode(APPRIVATE, 3280, *outKey, size);
+    // print_debug("here we go");
+    // print_debug(outKey);
+
+	byte* out[1000]; // Pointer to a pointer for encrypted information.
+    word32 outLen = 1000;
+    print_debug("%i", wc_RsaEncryptSize(&comPubKey));
+    print_debug("len: %i", len);
+    print_debug("outlen: %i", outLen);
+    print_hex_debug(out, outLen);
+    print_hex_debug(buffer, len);
+    if (&rng == NULL) {
+        print_debug("huh?!");
+    }
+    int result = wc_RsaPublicEncrypt(buffer, sizeof(buffer), out, sizeof(out), &comPubKey, &rng);
+    // in == NULL || inLen == 0 || out == NULL || key == NULL
+    // int wc_RsaPublicEncrypt(const byte* in, word32 inLen, byte* out, word32 outLen,
+    //                                                 RsaKey* key, WC_RNG* rng)
+    // rngReturn = wc_FreeRng(&rng);
+    // if(rngReturn < 0)
+    // {
+    //     return ERROR_RETURN;
+    // }
+    if(result < 0)
+    {
+        print_debug("encrypt error %i",result);
+        
+        return ERROR_RETURN;
+        
+    }
+    
+    return send_packet(address, outLen, out);
 }
 
 /**
@@ -148,10 +217,41 @@ int secure_send(uint8_t address, uint8_t* buffer, uint8_t len) {
  * This function must be implemented by your team to align with the security requirements.
 */
 int secure_receive(i2c_addr_t address, uint8_t* buffer) {
-    return poll_and_receive_packet(address, buffer);
+    int len = poll_and_receive_packet(address, buffer);
+    print_debug("secure_receive happened 221");
+    RsaKey apPrivKey; // the AP Private key
+    
+    byte outKey[1000];
+    word32 size = 1000;
+    print_debug("secure_receive happened 226");
+    Base64_Decode(APPRIVATE, 3280, *outKey, size);
+    print_debug("here we go");
+    print_debug(outKey);
+    apPrivKey=setPrivRSAKey(outKey);
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    print_debug(rngReturn);
+    if(rngReturn < 0)
+    {
+        print_debug("Error line 190");
+        return ERROR_RETURN;
+    }
+    byte* out; // Pointer to a pointer for decrypted information.
+
+    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, &apPrivKey);
+    rngReturn = wc_FreeRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(ret == -201) // RSA_PAD_E
+    {
+        return ERROR_RETURN;
+    }
+    return ret; // number of bytes recieved 
 }
 
-/**
+/*
  * @brief Get Provisioned IDs
  * 
  * @param uint32_t* buffer
@@ -172,6 +272,13 @@ int get_provisioned_ids(uint32_t* buffer) {
 // Initialize the device
 // This must be called on startup to initialize the flash and i2c interfaces
 void init() {
+    
+    #ifdef WC_RNG_SEED_CB
+    print_debug("ifdef was true");
+    wc_SetSeed_Cb(wc_GenerateSeed);
+    #endif
+    //wolfSSL_Init(); //this function is needed to enable all wolfSSL functions??
+    wolfCrypt_Init();
     
     // Hash PIN 
     char data[]= AP_PIN; //create character array out of plaintext pin data
@@ -217,16 +324,19 @@ void init() {
 // Send a command to a component and receive the result
 int issue_cmd(i2c_addr_t addr, uint8_t* transmit, uint8_t* receive) {
     // Send message
-    int result = send_packet(addr, sizeof(uint8_t), transmit);
+    print_debug("made it to line 281");
+    int result = secure_send(addr, sizeof(uint8_t), transmit);
     if (result == ERROR_RETURN) {
+        print_debug("error return 284");
         return ERROR_RETURN;
     }
-    
+    print_debug("made it to line 286");
     // Receive message
-    int len = poll_and_receive_packet(addr, receive);
+    int len = secure_receive(addr, receive);
     if (len == ERROR_RETURN) {
         return ERROR_RETURN;
     }
+    print_debug("made it to line 338");
     return len;
 }
 
@@ -271,12 +381,13 @@ int validate_components() {
     // Buffers for board link communication
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    print_debug("295\n");
 
     // Send validate command to each component
     for (unsigned i = 0; i < flash_status.component_cnt; i++) {
         // Set the I2C address of the component
         i2c_addr_t addr = component_id_to_i2c_addr(flash_status.component_ids[i]);
-
+        print_debug("301\n");
         // Create command message
         command_message* command = (command_message*) transmit_buffer;
         command->opcode = COMPONENT_CMD_VALIDATE;
@@ -288,12 +399,27 @@ int validate_components() {
             return ERROR_RETURN;
         }
 
-        validate_message* validate = (validate_message*) receive_buffer;
+        validate_message* validate = receive_buffer; // let it auto-cast I suppose
+
         // Check that the result is correct
         if (validate->component_id != flash_status.component_ids[i]) {
             print_error("Component ID: 0x%08x invalid\n", flash_status.component_ids[i]);
             return ERROR_RETURN;
         }
+        print_debug("320\n");
+        // Get the component validation message
+        RsaKey  comPubKey; // the component public key
+        comPubKey= setPubRSAKey(COMPUBLIC);
+        byte in[] = { validate->cVertMessage }; // Byte array to be decrypted.
+        byte* out; // Pointer to a pointer for decrypted information.
+        print_debug("before verifyInLine\n");
+        // Confirm the message with component public key
+        if(wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &comPubKey) < 0) {
+            print_debug("error_return\n");
+            return ERROR_RETURN;
+        }
+
+        print_debug("331\n");
     }
     return SUCCESS_RETURN;
 }
@@ -301,17 +427,31 @@ int validate_components() {
 int boot_components() {
     // Buffers for board link communication
     uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
+    uint8_t inByte2[sizeof(apvertMessage)] = apvertMessage;
+    uint8_t outByte2[MAX_I2C_MESSAGE_LEN - 1];
     uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    // unsigned char inByte[sizeof(apvertMessage)] = apvertMessage;
+    int ret;
+    RsaKey apPrivKey; // the AP Private key
+    apPrivKey=setPrivRSAKey(APPRIVATE);
+    RNG rng;
+    ret = wc_InitRng(&rng);
+    // unsigned char outByte2[MAX_I2C_MESSAGE_LEN - 1];
+    ret = wc_RsaSSL_Sign(inByte2, sizeof(inByte2),outByte2, sizeof(outByte2),&apPrivKey,&rng);
+
 
     // Send boot command to each component
     for (unsigned i = 0; i < flash_status.component_cnt; i++) {
         // Set the I2C address of the component
         i2c_addr_t addr = component_id_to_i2c_addr(flash_status.component_ids[i]);
-        
+
         // Create command message
         command_message* command = (command_message*) transmit_buffer;
         command->opcode = COMPONENT_CMD_BOOT;
-        
+        memcpy(command->params, outByte2, sizeof(outByte2));
+        // command->params = outByte2;
+
+
         // Send out command and receive result
         int len = issue_cmd(addr, transmit_buffer, receive_buffer);
         if (len == ERROR_RETURN) {
@@ -461,6 +601,7 @@ int validate_token() {
 
 // Boot the components and board if the components validate
 void attempt_boot() {
+    print_debug("booting\n");
     if (validate_components()) {
         print_error("Components could not be validated\n");
         return;

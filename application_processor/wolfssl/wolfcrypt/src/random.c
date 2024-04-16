@@ -730,8 +730,7 @@ int wc_RNG_TestSeed(const byte* seed, word32 seedSz)
     while (seedIdx < seedSz - SEED_BLOCK_SZ) {
         if (ConstantCompare(seed + seedIdx,
                             seed + seedIdx + scratchSz,
-                            (int)scratchSz) == 0) {
-
+                            (int)scratchSz) == 0) {// error trail through here
             ret = DRBG_CONT_FAILURE;
         }
         seedIdx += SEED_BLOCK_SZ;
@@ -1567,7 +1566,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 #else
     (void)devId;
 #endif
-
+// got through here on both fronts
 #ifdef HAVE_HASHDRBG
     /* init the DBRG to known values */
     rng->drbg = NULL;
@@ -1611,7 +1610,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
         return ret;
     }
 #endif
-
+//both made through here too.
 #ifdef CUSTOM_RAND_GENERATE_BLOCK
     ret = 0; /* success */
 #else
@@ -1649,13 +1648,18 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
                 ret = seedCb(&rng->seed, seed, seedSz);
                 if (ret != 0) {
                     ret = DRBG_FAILURE;
+                    // return -1652;
                 }
             }
 #else
-            ret = wc_GenerateSeed(&rng->seed, seed, seedSz);
+            ret = wc_GenerateSeed(&rng->seed, seed, seedSz);// -199 error is in this function
+            // return ret;
+            if (ret != 0) {
+                return -199;
+            }
 #endif
             if (ret == 0)
-                ret = wc_RNG_TestSeed(seed, seedSz);
+                ret = wc_RNG_TestSeed(seed, seedSz); 
             else {
                 ret = DRBG_FAILURE;
                 rng->status = DRBG_FAILED;
@@ -1682,7 +1686,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     else {
         ret = DRBG_CONT_FAILURE;
     }
-
+// made it past here
     if (ret == DRBG_SUCCESS) {
 #ifdef WOLFSSL_CHECK_MEM_ZERO
 #ifdef HAVE_HASHDRBG
@@ -1691,6 +1695,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
         wc_MemZero_Add("DRBG C", &drbg->C, sizeof(drbg->C));
 #endif
 #endif
+    // didn't come through here.
 
         rng->status = DRBG_OK;
         ret = 0;
@@ -1702,6 +1707,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     else if (ret == DRBG_FAILURE) {
         rng->status = DRBG_FAILED;
         ret = RNG_FAILURE_E;
+        // return was returning errorhere i think
     }
     else {
         rng->status = DRBG_FAILED;
@@ -1775,9 +1781,15 @@ WOLFSSL_ABI
 int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
 {
     int ret;
-
-    if (rng == NULL || output == NULL)
-        return BAD_FUNC_ARG;
+    if (rng == NULL || output == NULL) {
+        if (rng == NULL) {
+            return -1782; // -173 error was here. rng was null
+        } else if (output == NULL) {
+            return -1754;
+        }
+        // return -1780; //BAD_FUNC_ARG;
+    }
+        
 
     if (sz == 0)
         return 0;
@@ -3633,14 +3645,15 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
 #elif defined(NO_DEV_RANDOM)
 
-    #error "you need to write an os specific wc_GenerateSeed() here"
+    // #error "you need to write an os specific wc_GenerateSeed() here"
 
-    /*
+    
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
+        os->fd = 4;
         return 0;
     }
-    */
+    
 
 #else
 

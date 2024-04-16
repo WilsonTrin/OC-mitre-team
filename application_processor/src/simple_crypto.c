@@ -11,11 +11,25 @@
  * @copyright Copyright (c) 2024 The MITRE Corporation
  */
 
-#if CRYPTO_EXAMPLE
+// #if CRYPTO_EXAMPLE
 
 #include "simple_crypto.h"
 #include <stdint.h>
 #include <string.h>
+// #include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/random.h"
+// #include "wolfssl/mcapi/crypto.h"
+// #include "wolfssl/openssl/rsa.h"
+// #include "wolfssl/openssl/pem.h"
+// #include "wolfssl/wolfcrypt/rsa.h"
+// #include "wolfssl/wolfcrypt/asn.h"
+#include "wolfssl/wolfcrypt/asn_public.h"
+#include "wolfssl/wolfssl/wolfcrypt/asn_public.h"
+#include "wolfssl/wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/asn.h"
+#include "host_messaging.h"
+// #include "wolfssl/openssl/asn1.h"
+
 
 /******************************** FUNCTION PROTOTYPES ********************************/
 /** @brief Encrypts plaintext using a symmetric cipher
@@ -104,4 +118,99 @@ int hash(void *data, size_t len, uint8_t *hash_out) {
     return wc_Md5Hash((uint8_t *)data, len, hash_out);
 }
 
-#endif
+//Function converts a Public Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPubRSAKey (char* pemPubKey)
+{
+    byte * outKey[1000];
+    word32 size = 1000;
+    word32 * pointer = &size;
+    print_debug("%i", *pointer);
+    print_hex_debug(pemPubKey, strlen(pemPubKey));
+    
+    Base64_Decode(pemPubKey, strlen(pemPubKey), outKey, pointer);
+    // print_debug("%i", Base64_Decode("aGV5IG15IG5hbWUgaXMgbGFuY2U=", strlen("aGV5IG15IG5hbWUgaXMgbGFuY2U="), outKey, pointer));
+    print_debug("here we go");
+    print_debug("%i", *pointer);
+    print_hex_debug(outKey, *pointer);
+    unsigned char * result[*pointer];
+
+    memcpy(result, outKey, *pointer);
+
+
+    int pemSz=sizeof(result);
+    print_debug("%i", pemSz);
+    //print_debug(*result);
+     //int pemSz=sizeof(pemPubKey);
+
+    DerBuffer* saveBuff;
+    word32 saveBuffSz=0; 
+   
+    saveBuffSz=wc_PemToDer(result, pemSz, 12/* was 12 PUBLICKEY_TYPE*/, &saveBuff, NULL, NULL, NULL); //wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz); // here?
+    if (saveBuffSz<0)
+    {
+        print_debug("error pem to der %i",saveBuffSz);
+    }
+
+    print_debug("%i", saveBuffSz);
+
+    RsaKey pub;
+    word32 idx = 0;
+    int ret = 0;
+    
+ 
+    int rsaresult = wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    if (rsaresult<0)
+    {
+        print_debug("error init rsa key %i",rsaresult);
+    }
+    print_debug("savebuff length %i",saveBuff->length);
+
+    // WC_RNG* rng;
+    // print_debug("148");
+    // //Arc4 * arc;
+    // OS_Seed * seed;
+    // print_debug("151");
+    // seed->fd=4;
+    // print_debug("153");
+    // rng-> seed=*seed;
+    // print_debug("155");
+    // rng->heap=NULL;
+    // wc_MakeRsaKey(&pub, 1024, 65537, rng);
+    // byte * output[2000];
+    // wc_RsaKeyToPublicDer(pub, output, 1024);
+
+    ret = wc_RsaPublicKeyDecode(saveBuff->buffer, &idx, &pub, saveBuff->length);
+    if( ret != 0 ) {
+        print_debug("error generating key %i",ret);
+        print_debug("%i", sizeof(*saveBuff));
+        print_hex_debug(saveBuff->buffer, saveBuff->length);
+    }
+    print_debug("current pub key size%i", wc_RsaEncryptSize(&pub));
+
+    return pub;
+
+}
+
+//Function converts a Private Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPrivRSAKey (char* privPubKey)
+{
+    int pemSz=sizeof(privPubKey);
+    char* saveBuff ;
+    int saveBuffSz=0;
+
+    saveBuffSz=wolfSSL_CertPemToDer(privPubKey,pemSz,*saveBuff,saveBuffSz,11); //RSA_TYPE I think
+
+    RsaKey priv;
+    word32 idx = 0;
+    int ret = 0;
+   
+ 
+    wc_InitRsaKey(&priv, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPrivateKeyDecode(saveBuff, &idx, &priv, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing private key
+    }
+    return priv;
+}
+
+// #endif

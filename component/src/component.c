@@ -23,10 +23,24 @@
 
 #include "simple_i2c_peripheral.h"
 #include "board_link.h"
+#include "wolfssl/wolfcrypt/random.h"
+#include "wolfssl/mcapi/crypto.h"
+#include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/rsa.h"
+#include "wolfssl/wolfcrypt/asn.h"
+
+// Todo:
+    // move WolfSSL into component's directory.
+    // finish bugs here
+    // verify everything works together correctly
+// #include "wolfssl/ssl.h"
+// #include "wolfssl/wolfcrypt/random.h"
+// #include "wolfssl/mcapi/crypto.h"
+
 
 // Includes from containerized build
 #include "ectf_params.h"
-#include "global_secrets.h"
+#include "com_secrets.h"
 
 #ifdef POST_BOOT
 #include "led.h"
@@ -46,6 +60,7 @@
 #define ATTESTATION_DATE "08/08/08"
 #define ATTESTATION_CUSTOMER "Fritz"
 */
+#define CVERTMESSAGE "DLK1fU2x1uq+DbXL0oUvK4iQxjcw87Bhkpf6DdHS6lTH+bFxIAzVWBOgbWs7P/6yiRpCPS8BvRcgmzAnaDqr1VPxq9nyLlmeSqcvpV2TsbfcE8A3mTfyTl9V/PwmaiL8Bn5Wep+lD4q1D87gMKK+zt7xP0dpZ95ATbufA3eJoc8="
 
 /******************************** TYPE DEFINITIONS ********************************/
 // Commands received by Component using 32 bit integer
@@ -66,6 +81,7 @@ typedef struct {
 
 typedef struct {
     uint32_t component_id;
+    uint8_t cVertMessage[MAX_I2C_MESSAGE_LEN-4];
 } validate_message;
 
 typedef struct {
@@ -75,11 +91,12 @@ typedef struct {
 /********************************* FUNCTION DECLARATIONS **********************************/
 // Core function definitions
 void component_process_cmd(void);
-void process_boot(void);
+int process_boot(command_message* command);
 void process_scan(void);
 void process_validate(void);
 void process_attest(void);
-
+RsaKey setPubRSAKey (char* pemPubKey);
+RsaKey setPrivRSAKey (char* privPubKey);
 /********************************* GLOBAL VARIABLES **********************************/
 // Global varaibles
 uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
@@ -95,8 +112,30 @@ uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
  * Securely send data over I2C. This function is utilized in POST_BOOT functionality.
  * This function must be implemented by your team to align with the security requirements.
 */
-void secure_send(uint8_t* buffer, uint8_t len) {
-    send_packet_and_ack(len, buffer); 
+void secure_send(uint8_t len, uint8_t* buffer) {
+    // Get the component validation message
+	RsaKey  apPubKey; // the AP public key
+    apPubKey=setPubRSAKey(APPUBLIC);
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    byte* out; // Pointer to a pointer for decrypted information.
+    word32 outLen = 0;
+    int result = wc_RsaPublicEncrypt(buffer, len, out, outLen, &apPubKey, rng);
+
+    rngReturn = wc_FreeRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(result < 0)
+    {
+        return ERROR_RETURN;
+    }
+    send_packet_and_ack(outLen, out);   // Send the packet
 }
 
 /**
@@ -110,7 +149,154 @@ void secure_send(uint8_t* buffer, uint8_t len) {
  * This function must be implemented by your team to align with the security requirements.
 */
 int secure_receive(uint8_t* buffer) {
-    return wait_and_receive_packet(buffer);
+    int len = wait_and_receive_packet(buffer);  // Recieve encrypted packet and store the returned length of the packet.
+    RsaKey comPrivKey; // the Component Private Key
+    comPrivKey=setPrivRSAKey(COMPRIVATE);
+	RNG * rng;
+    int rngReturn = wc_InitRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }	
+    byte* out; // Pointer to a pointer for decrypted information.
+
+    int ret = wc_RsaPrivateDecryptInline(buffer, len, out, &comPrivKey);
+    
+    rngReturn = wc_FreeRng(rng);
+    if(rngReturn < 0)
+    {
+        return ERROR_RETURN;
+    }
+    if(ret == RSA_PAD_E)
+    {
+        return ERROR_RETURN;
+    }
+    return ret; // number of bytes recieved 
+}
+//Function converts a Public Key in PEM format to a WolfSSL RsaKey struct
+// RsaKey setPubRSAKey (char* pemPubKey)
+// {
+
+//     byte outKey[1000];
+//     word32 size = 1000;
+//     Base64_Decode(pemPubKey, sizeof(pemPubKey), *outKey, size);
+//     print_debug("here we go");
+//     print_debug(outKey);
+
+//     int pemSz=sizeof(outKey);
+//     char* saveBuff;
+//     int saveBuffSz=0;
+//     saveBuffSz=wc_PemToDer(outKey, pemSz, 12/*PUBLICKEY_TYPE*/, saveBuff, NULL, NULL, NULL);
+
+//     RsaKey pub;
+//     word32 idx = 0;
+//     int ret = 0;
+  
+ 
+//     wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+//     ret = wc_RsaPublicKeyDecode(saveBuff, &idx, &pub, saveBuffSz);
+//     if( ret != 0 ) {
+//         // error parsing public key
+//     }
+
+//     return pub;
+
+// }
+
+// replacing with code from ap's crypto
+
+RsaKey setPubRSAKey (char* pemPubKey)
+{
+    byte * outKey[1000];
+    word32 size = 1000;
+    word32 * pointer = &size;
+    print_debug("%i", *pointer);
+    print_hex_debug(pemPubKey, strlen(pemPubKey));
+    
+    Base64_Decode(pemPubKey, strlen(pemPubKey), outKey, pointer);
+    // print_debug("%i", Base64_Decode("aGV5IG15IG5hbWUgaXMgbGFuY2U=", strlen("aGV5IG15IG5hbWUgaXMgbGFuY2U="), outKey, pointer));
+    print_debug("here we go");
+    print_debug("%i", *pointer);
+    print_hex_debug(outKey, *pointer);
+    unsigned char * result[*pointer];
+
+    memcpy(result, outKey, *pointer);
+
+
+    int pemSz=sizeof(result);
+    print_debug("%i", pemSz);
+    //print_debug(*result);
+     //int pemSz=sizeof(pemPubKey);
+
+    DerBuffer* saveBuff;
+    word32 saveBuffSz=0; 
+   
+    saveBuffSz=wc_PemToDer(result, pemSz, 12/* was 12 PUBLICKEY_TYPE*/, &saveBuff, NULL, NULL, NULL); //wc_PubKeyPemToDer(pemPubKey,pemSz,*saveBuff,saveBuffSz); // here?
+    if (saveBuffSz<0)
+    {
+        print_debug("error pem to der %i",saveBuffSz);
+    }
+
+    print_debug("%i", saveBuffSz);
+
+    RsaKey pub;
+    word32 idx = 0;
+    int ret = 0;
+    
+ 
+    int rsaresult = wc_InitRsaKey(&pub, NULL); // not using heap hint. No custom memory
+    if (rsaresult<0)
+    {
+        print_debug("error init rsa key %i",rsaresult);
+    }
+    print_debug("savebuff length %i",saveBuff->length);
+
+    // WC_RNG* rng;
+    // print_debug("148");
+    // //Arc4 * arc;
+    // OS_Seed * seed;
+    // print_debug("151");
+    // seed->fd=4;
+    // print_debug("153");
+    // rng-> seed=*seed;
+    // print_debug("155");
+    // rng->heap=NULL;
+    // wc_MakeRsaKey(&pub, 1024, 65537, rng);
+    // byte * output[2000];
+    // wc_RsaKeyToPublicDer(pub, output, 1024);
+
+    ret = wc_RsaPublicKeyDecode(saveBuff->buffer, &idx, &pub, saveBuff->length);
+    if( ret != 0 ) {
+        print_debug("error generating key %i",ret);
+        print_debug("%i", sizeof(*saveBuff));
+        print_hex_debug(saveBuff->buffer, saveBuff->length);
+    }
+    print_debug("current pub key size%i", wc_RsaEncryptSize(&pub));
+
+    return pub;
+
+}
+
+//Function converts a Private Key in PEM format to a WolfSSL RsaKey struct
+RsaKey setPrivRSAKey (char* privPubKey)
+{
+    int pemSz=sizeof(privPubKey);
+    char* saveBuff ;
+    int saveBuffSz=0;
+
+    saveBuffSz=wolfSSL_CertPemToDer(privPubKey,pemSz,*saveBuff,saveBuffSz,RSA_TYPE); //is this being used in ap?
+
+    RsaKey priv;
+    word32 idx = 0;
+    int ret = 0;
+   
+ 
+    wc_InitRsaKey(&priv, NULL); // not using heap hint. No custom memory
+    ret = wc_RsaPrivateKeyDecode(saveBuff, &idx, &priv, saveBuffSz);
+    if( ret != 0 ) {
+        // error parsing private key
+    }
+    return priv;
 }
 
 /******************************* FUNCTION DEFINITIONS *********************************/
@@ -154,7 +340,7 @@ void component_process_cmd() {
     // Output to application processor dependent on command received
     switch (command->opcode) {
     case COMPONENT_CMD_BOOT:
-        process_boot();
+        process_boot(command);
         break;
     case COMPONENT_CMD_SCAN:
         process_scan();
@@ -171,35 +357,66 @@ void component_process_cmd() {
     }
 }
 
-void process_boot() {
-    // The AP requested a boot. Set `component_boot` for the main loop and
+int process_boot(command_message* command) {
+    // The AP requested a boot. Set component_boot for the main loop and
     // respond with the boot message
-    uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
-    memcpy((void*)transmit_buffer, COMPONENT_BOOT_MSG, len);
-    send_packet_and_ack(len, transmit_buffer);
-    // Call the boot function
-    boot();
+    RsaKey  apPubKey; // the AP public key
+    apPubKey=setPubRSAKey(APPUBLIC);
+    byte in[] = {command->params}; // Byte array to be decrypted.
+    byte out; // Pointer to a pointer for decrypted information.
+    // Confirm the message with component public key
+    if (wc_RsaSSL_VerifyInline(in, sizeof(in), &out, &apPubKey) < 0)
+        return ERROR_RETURN;
+    else {
+
+        uint8_t len = strlen(COMPONENT_BOOT_MSG) + 1;
+        memcpy(transmit_buffer, COMPONENT_BOOT_MSG, len);
+        secure_send(len, transmit_buffer);
+        // Call the boot function
+        boot();
+        return 0;
+    }
 }
 
 void process_scan() {
     // The AP requested a scan. Respond with the Component ID
     scan_message* packet = (scan_message*) transmit_buffer;
     packet->component_id = COMPONENT_ID;
-    send_packet_and_ack(sizeof(scan_message), transmit_buffer);
+    secure_send(sizeof(scan_message), transmit_buffer);
 }
+
 
 void process_validate() {
     // The AP requested a validation. Respond with the Component ID
-    validate_message* packet = (validate_message*) transmit_buffer;
-    packet->component_id = COMPONENT_ID;
-    send_packet_and_ack(sizeof(validate_message), transmit_buffer);
+    uint8_t receive_buffer[MAX_I2C_MESSAGE_LEN];
+    uint8_t transmit_buffer[MAX_I2C_MESSAGE_LEN];
+    uint8_t outByte[MAX_I2C_MESSAGE_LEN - 1];
+    uint8_t inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
+    int ret;
+    RsaKey comPrivKey; // the Component Private Key
+    comPrivKey=setPrivRSAKey(COMPRIVATE);
+    RNG rng;
+    ret = wc_InitRng(&rng);
+    
+    //Sign with the CVERTMESSAGE  with the COM private key here:
+    ret = wc_RsaSSL_Sign(inByte, sizeof(inByte),outByte, sizeof(outByte),&comPrivKey,&rng);
+    // byte inByte[sizeof(CVERTMESSAGE)] = CVERTMESSAGE;
+    ret = wc_FreeRng(&rng);
+    // create a packet with component id and encrypted message
+    validate_message* packet1 = (validate_message*) transmit_buffer;
+    packet1->component_id = COMPONENT_ID;
+    memcpy(packet1->cVertMessage, outByte, sizeof(outByte));
+
+    //Send the signed verification message here: 
+    secure_send(sizeof(validate_message), transmit_buffer);
+
 }
 
 void process_attest() {
     // The AP requested attestation. Respond with the attestation data
     uint8_t len = sprintf((char*)transmit_buffer, "LOC>%s\nDATE>%s\nCUST>%s\n",
                 ATTESTATION_LOC, ATTESTATION_DATE, ATTESTATION_CUSTOMER) + 1;
-    send_packet_and_ack(len, transmit_buffer);
+    secure_send(len, transmit_buffer);
 }
 
 /*********************************** MAIN *************************************/
@@ -217,7 +434,7 @@ int main(void) {
     LED_On(LED2);
 
     while (1) {
-        wait_and_receive_packet(receive_buffer);
+        secure_receive(receive_buffer);
 
         component_process_cmd();
     }
