@@ -1405,7 +1405,7 @@ static int RsaPad(const byte* input, word32 inputLen, byte* pkcsBlock,
 {
     if (input == NULL || inputLen == 0 || pkcsBlock == NULL ||
                                                         pkcsBlockLen == 0) {
-        return -123456; // BAD_FUNC_ARG;
+        return BAD_FUNC_ARG;
     }
 
     if (pkcsBlockLen - RSA_MIN_PAD_SZ < inputLen) {
@@ -1427,7 +1427,6 @@ static int RsaPad(const byte* input, word32 inputLen, byte* pkcsBlock,
         word32 padLen, i;
         int    ret;
         padLen = pkcsBlockLen - inputLen - 1;
-        // ERRor -173 is in ret statement below.
         ret    = wc_RNG_GenerateBlock(rng, &pkcsBlock[1], padLen);
         if (ret != 0) {
             return ret;
@@ -3230,15 +3229,16 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
     int ret = 0;
     int sz;
     int state;
-    // we know it gets past here
+
     if (in == NULL || inLen == 0 || out == NULL || key == NULL) {
-        return -12345; // BAD_FUNC_ARG;
+        return BAD_FUNC_ARG;
     }
 
     sz = wc_RsaEncryptSize(key);
     if (sz > (int)outLen) {
         return RSA_BUFFER_E;
     }
+
     if (sz < RSA_MIN_PAD_SZ || sz > (int)RSA_MAX_SIZE/8) {
         return WC_KEY_SIZE_E;
     }
@@ -3251,8 +3251,7 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
 #endif
         return RSA_BUFFER_E;
     }
-    // return -12354;
-    // it get's past here.
+
 #ifndef WOLFSSL_BIND
     state = key->state;
 #else
@@ -3325,13 +3324,8 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
             }
        #endif
     #endif /* WOLFSSL_SE050 */
-    // got to here too!!
-    // got past here on ret as well.
-    // if (ret == -73) {
-    //     return -112329;
-    // }
+
         key->state = RSA_STATE_ENCRYPT_PAD;
-        // - 173 BAD_FUNC_ARG error is in this function right here.
         ret = wc_RsaPad_ex(in, inLen, out, (word32)sz, pad_value, rng, pad_type,
                            hash, mgf, label, labelSz, saltLen,
                            mp_count_bits(&key->n), key->heap);
@@ -3365,8 +3359,6 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
         ret = BAD_STATE_E;
         break;
     }
-    // did not get past here on returns tho
-    // got past here too on standard returns.
 
     /* if async pending then return and skip done cleanup below */
     if (ret == WC_PENDING_E
@@ -3414,7 +3406,7 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
     byte* pad = NULL;
 
     if (in == NULL || inLen == 0 || out == NULL || key == NULL) {
-        return -12345; //BAD_FUNC_ARG;
+        return BAD_FUNC_ARG;
     }
 
     switch (key->state) {
@@ -4237,7 +4229,6 @@ int wc_RsaEncryptSize(const RsaKey* key)
     int ret;
 
     if (key == NULL) {
-        return -4231;
         return BAD_FUNC_ARG;
     }
 
